@@ -12,21 +12,21 @@ export function SoundWaveVisualization() {
     Array.from({ length: 60 }, (_, i) => ({
       id: i,
       heights: [
-        Math.random() * 100 + 60,
-        Math.random() * 180 + 80,
-        Math.random() * 100 + 60,
+        Math.random() * 150 + 100,
+        Math.random() * 280 + 120,
+        Math.random() * 150 + 100,
       ],
       duration: 1.5 + Math.random(),
     }))
   );
   
   return (
-    <div className="absolute inset-0 flex items-center justify-center opacity-40">
-      <div className="flex items-center gap-1 h-64">
+    <div className="absolute inset-0 flex items-center justify-center opacity-60">
+      <div className="flex items-center gap-1 h-96">
         {bars.map((bar) => (
           <motion.div
             key={bar.id}
-            className="w-1 bg-gradient-to-t from-[#1db954] to-[#1ed760] rounded-full"
+            className="w-2 bg-gradient-to-t from-[#1db954] to-[#1ed760] rounded-full"
             animate={{
               height: bar.heights,
             }}

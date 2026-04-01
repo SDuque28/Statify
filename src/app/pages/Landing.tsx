@@ -3,6 +3,7 @@ import { Music2, Sparkles, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { FeatureCard } from '../components/FeatureCard';
 import { SoundWaveVisualization } from '../components/SoundWaveVisualization';
+import logo from '../../imports/LogoWhite.svg';
 
 export function Landing() {
   const navigate = useNavigate();
@@ -18,9 +19,10 @@ export function Landing() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-8"
+            className="mb-8 flex flex-col items-center gap-4"
           >
-            <h1 className="mb-2 text-5xl tracking-tight md:text-7xl">
+            <img src={logo} alt="Statify Logo" className="h-20 md:h-28 w-auto" />
+            <h1 className="text-5xl md:text-7xl mb-2 tracking-tight">
               <span className="font-bold">Statify</span>
             </h1>
           </motion.div>

@@ -2,6 +2,7 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import logo from '../../imports/LogoWhite.svg';
 
 export function Auth() {
   const navigate = useNavigate();
@@ -32,9 +33,12 @@ export function Auth() {
       >
         <div className="rounded-2xl border border-white/5 bg-[#121212] p-8 shadow-2xl backdrop-blur-xl">
           <div className="mb-8 text-center">
-            <h1 className="mb-2 text-3xl tracking-tight">
-              <span className="font-bold text-white">Statify</span>
-            </h1>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <h1 className="text-3xl tracking-tight">
+                <span className="font-bold text-white">Statify</span>
+              </h1>
+              <img src={logo} alt="Statify Logo" className="h-8 w-auto" />
+            </div>
             <p className="text-sm text-gray-400">Connect your Spotify account</p>
           </div>
 
