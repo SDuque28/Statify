@@ -15,7 +15,7 @@ export function TrackItem({
 }: TrackItemProps) {
   const chartData = Array.from({ length: 7 }, (_, i) => ({
     day: i,
-    plays: Math.floor(Math.random() * playCount) + playCount / 2,
+    plays: Math.floor(playCount * (0.5 + (((playCount + i * 17) % 45) + 10) / 100)),
   }));
 
   return (
