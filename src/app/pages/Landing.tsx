@@ -22,7 +22,7 @@ export function Landing() {
             className="mb-8 flex flex-col items-center gap-4"
           >
             <img src={logo} alt="Statify Logo" className="h-20 md:h-28 w-auto" />
-            <h1 className="text-5xl md:text-7xl mb-2 tracking-tight">
+            <h1 className="mb-2 text-6xl tracking-tight md:text-8xl">
               <span className="font-bold">Statify</span>
             </h1>
           </motion.div>
@@ -61,15 +61,20 @@ export function Landing() {
               </span>
             </button>
             <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto text-decoration: underline"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/auth')}
-          >
-            Log In
-          </motion.p>
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{
+                scale: 1.04,
+                color: '#ffffff',
+                textShadow:
+                  '0 0 10px rgba(29, 185, 84, 0.85), 0 0 22px rgba(29, 185, 84, 0.55)',
+              }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="mx-auto mb-12 max-w-2xl cursor-pointer text-lg text-gray-400 underline underline-offset-4 md:text-xl"
+              onClick={() => navigate('/auth')}
+            >
+              Log In
+            </motion.p>
           </motion.div>
 
           <motion.div

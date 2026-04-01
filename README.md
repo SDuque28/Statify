@@ -1,73 +1,122 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Statify
 
-Currently, two official plugins are available:
+Statify is a music analytics frontend built with React, TypeScript, Vite, and Tailwind CSS v4. It explores the idea of turning listening history into a clean, animated dashboard with a landing page, a personalized home view, and user settings with theme support.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The current version is a frontend prototype: it focuses on UI, routing, theming, and data visualization patterns using mock data.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Marketing-style landing page with animated hero content
+- Dashboard with top artists, top tracks, and yearly listening summary
+- Settings page with profile information and theme preferences
+- Light and dark theme support through a shared theme context
+- Recharts-based visualizations for music stats
+- Responsive layout powered by Tailwind CSS
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- `React 19`
+- `TypeScript`
+- `Vite`
+- `Tailwind CSS v4`
+- `React Router`
+- `Motion`
+- `Recharts`
+- `Lucide React`
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Project Structure
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+  app/
+    components/   Reusable UI pieces such as cards, charts, header, and settings controls
+    context/      Theme provider and shared theme hook
+    pages/        Route-level screens like Landing, Home, Auth, and Settings
+    App.tsx       Root app wrapper
+    routes.tsx    Route definitions
+  imports/        Static assets such as logos
+  styles/         Tailwind entry file and theme variables
+  main.tsx        Application entry point
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Routes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `/` landing page
+- `/auth` placeholder authentication screen
+- `/home` dashboard
+- `/settings` user settings and preferences
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+### Prerequisites
+
+- `Node.js` 20+ recommended
+- `npm` 10+ recommended
+
+### Install dependencies
+
+```bash
+npm install
 ```
+
+### Start the development server
+
+```bash
+npm run dev
+```
+
+### Build for production
+
+```bash
+npm run build
+```
+
+### Lint the project
+
+```bash
+npm run lint
+```
+
+### Preview the production build
+
+```bash
+npm run preview
+```
+
+## Styling and Theming
+
+Statify uses Tailwind CSS v4 together with custom CSS variables defined in `src/styles/theme.css`.
+
+- Global Tailwind import lives in `src/styles/tailwind.css`
+- App-wide theme tokens live in `src/styles/theme.css`
+- Theme state is managed in `src/app/context/ThemeContext.tsx` and `src/app/context/theme.ts`
+
+This setup makes it easy to keep component styles consistent while still supporting light and dark mode.
+
+## Current Status
+
+This project currently uses static mock data for artists, tracks, user info, and charts. It is a strong base for adding:
+
+- Spotify authentication
+- Real user data
+- Backend integration
+- Persistent user preferences
+- More advanced listening insights
+
+## Scripts
+
+- `npm run dev` starts the Vite dev server
+- `npm run build` runs TypeScript build checks and creates a production bundle
+- `npm run lint` runs ESLint
+- `npm run preview` serves the production build locally
+
+## Notes
+
+- The project is configured with ESLint and React Fast Refresh friendly patterns
+- Tailwind is integrated through `@tailwindcss/vite`
+- The UI is already structured in reusable components, which makes future scaling easier
+
+## Authoring Direction
+
+If you continue building Statify, a good next step would be connecting the UI to real Spotify data and replacing the current mock content with authenticated user insights.

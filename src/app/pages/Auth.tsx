@@ -42,7 +42,13 @@ export function Auth() {
             <p className="text-sm text-gray-400">Connect your Spotify account</p>
           </div>
 
-          <div className="mb-8 flex border-b border-white/10">
+          <div className="relative mb-8 flex border-b border-white/10">
+            <motion.div
+              aria-hidden="true"
+              className="absolute bottom-0 left-0 h-0.5 w-1/2 bg-[#1db954]"
+              animate={{ x: activeTab === 'signup' ? '0%' : '100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
             <button
               onClick={() => setActiveTab('signup')}
               className={`relative flex-1 pb-3 text-sm tracking-wider transition-colors ${
@@ -50,13 +56,6 @@ export function Auth() {
               }`}
             >
               SIGN UP
-              {activeTab === 'signup' && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1db954]"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
             </button>
             <button
               onClick={() => setActiveTab('login')}
@@ -65,13 +64,6 @@ export function Auth() {
               }`}
             >
               LOG IN
-              {activeTab === 'login' && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1db954]"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
             </button>
           </div>
 
