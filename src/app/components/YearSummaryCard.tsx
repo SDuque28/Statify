@@ -1,8 +1,11 @@
 import { Calendar, Music, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
+import { useTheme } from '../context/theme';
 
 export function YearSummaryCard() {
+  const { theme } = useTheme();
+
   const monthlyData = [
     { month: 'Jan', minutes: 4200 },
     { month: 'Feb', minutes: 5100 },
@@ -25,20 +28,8 @@ export function YearSummaryCard() {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-[var(--border-color)] bg-gradient-to-br from-[#1db954]/20 via-[var(--card-bg)] to-[var(--card-bg)] p-8">
-      <motion.div
-        className="absolute inset-0 opacity-30"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 50%, #1db954 0%, transparent 50%)',
-            'radial-gradient(circle at 80% 50%, #1ed760 0%, transparent 50%)',
-            'radial-gradient(circle at 20% 50%, #1db954 0%, transparent 50%)',
-          ],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-      />
-
-      <div className="relative z-10">
+    <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-8">
+      <div>
         <div className="mb-6">
           <h2 className="mb-2 text-3xl text-[var(--text-primary)]">My Year in Music</h2>
           <p className="text-[var(--text-secondary)]">2026 Listening Statistics</p>
@@ -51,7 +42,10 @@ export function YearSummaryCard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="rounded-lg border border-[var(--border-color)] bg-black/30 p-6 backdrop-blur-sm"
+              className={theme === 'light' 
+                ? 'bg-white/50 backdrop-blur-sm rounded-lg p-6 border border-[var(--border-color)]'
+                : 'bg-black/30 backdrop-blur-sm rounded-lg p-6 border border-[var(--border-color)]'
+              }
             >
               <div className="flex items-start gap-3">
                 <div className="rounded-lg bg-[#1db954]/20 p-2">
@@ -66,7 +60,10 @@ export function YearSummaryCard() {
           ))}
         </div>
 
-        <div className="h-48 rounded-lg border border-[var(--border-color)] bg-black/30 p-4 backdrop-blur-sm">
+        <div className={theme === 'light'
+          ? 'h-48 bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-[var(--border-color)]'
+          : 'h-48 bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-[var(--border-color)]'
+        }>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyData} className="w-full">
               <XAxis dataKey="month" stroke="#666" style={{ fontSize: '12px' }} />

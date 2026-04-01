@@ -1,9 +1,13 @@
 import { User } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import logo from '../../imports/LogoWhite.svg';
-
+import logoWhite from '../../imports/LogoWhite.svg';
+import logoBlack from '../../imports/LogoBlack.svg';
+import { useTheme } from '../context/theme';
+  
 export function Header() {
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const logo = theme === 'dark' ? logoWhite : logoBlack;
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/95 backdrop-blur-sm">
