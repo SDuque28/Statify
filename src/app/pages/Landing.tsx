@@ -49,7 +49,7 @@ export function Landing() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="mb-16"
+            className="mb-8"
           >
             <button
               onClick={() => navigate('/auth')}
@@ -70,7 +70,7 @@ export function Landing() {
                   '0 0 10px rgba(29, 185, 84, 0.85), 0 0 22px rgba(29, 185, 84, 0.55)',
               }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="mx-auto mb-12 max-w-2xl cursor-pointer text-lg text-gray-400 underline underline-offset-4 md:text-xl"
+              className="mx-auto mt-4 max-w-2xl cursor-pointer text-lg text-gray-400 underline underline-offset-4 md:text-xl"
               onClick={() => navigate('/auth')}
             >
               Log In
