@@ -20,6 +20,7 @@ export class SpotifyController {
       throw new BadRequestException('Missing Spotify authorization code');
     }
 
+    // TODO: Persist tokens here once the callback can resolve the authenticated local Statify user.
     return this.spotifyService.exchangeCodeForTokens(code);
   }
 }
