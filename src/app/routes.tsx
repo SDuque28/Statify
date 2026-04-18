@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
 import { Layout } from './pages/Layout';
@@ -15,17 +16,18 @@ export const router = createBrowserRouter([
     element: <Auth />,
   },
   {
-    path: '/home',
-    element: <Layout />,
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <Home /> },
-    ],
-  },
-  {
-    path: '/settings',
-    element: <Layout />,
-    children: [
-      { index: true, element: <Settings /> },
+      {
+        path: '/home',
+        element: <Layout />,
+        children: [{ index: true, element: <Home /> }],
+      },
+      {
+        path: '/settings',
+        element: <Layout />,
+        children: [{ index: true, element: <Settings /> }],
+      },
     ],
   },
   {
