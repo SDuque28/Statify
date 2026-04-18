@@ -3,20 +3,92 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import logo from '../../imports/LogoWhite.svg';
+import { AuthServiceError, authService } from '../../services/auth.service';
 
 export function Auth() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [formData, setFormData] = useState({
+  const [loginFormData, setLoginFormData] = useState({
     email: '',
     password: '',
   });
+  const [signupFormData, setSignupFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetFeedback = () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
+  const getFriendlyMessage = (error: unknown) => {
+    if (error instanceof AuthServiceError) {
+      if (error.message === 'Invalid credentials') {
+        return 'Invalid email or password.';
+      }
+
+      if (error.message === 'User already exists') {
+        return 'An account with this email already exists.';
+      }
+
+      return error.message;
+    }
+
+    return 'Unable to reach the server right now. Please try again.';
+  };
+
+  const handleTabChange = (tab: 'login' | 'signup') => {
+    setActiveTab(tab);
+    resetFeedback();
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/home');
+
+    resetFeedback();
+    setIsSubmitting(true);
+
+    try {
+      await authService.login(loginFormData.email.trim(), loginFormData.password);
+      navigate('/home');
+    } catch (error) {
+      setErrorMessage(getFriendlyMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    resetFeedback();
+    setIsSubmitting(true);
+
+    try {
+      const email = signupFormData.email.trim();
+
+      await authService.register(email, signupFormData.password);
+      setLoginFormData({
+        email,
+        password: signupFormData.password,
+      });
+      setSignupFormData({
+        email: '',
+        password: '',
+      });
+      setActiveTab('login');
+      setSuccessMessage('Account created successfully. You can now log in.');
+    } catch (error) {
+      setErrorMessage(getFriendlyMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -50,7 +122,7 @@ export function Auth() {
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
             <button
-              onClick={() => setActiveTab('signup')}
+              onClick={() => handleTabChange('signup')}
               className={`relative flex-1 pb-3 text-sm tracking-wider transition-colors ${
                 activeTab === 'signup' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
@@ -58,7 +130,7 @@ export function Auth() {
               SIGN UP
             </button>
             <button
-              onClick={() => setActiveTab('login')}
+              onClick={() => handleTabChange('login')}
               className={`relative flex-1 pb-3 text-sm tracking-wider transition-colors ${
                 activeTab === 'login' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
@@ -67,26 +139,41 @@ export function Auth() {
             </button>
           </div>
 
+          {errorMessage && (
+            <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-6 rounded-lg border border-[#1db954]/30 bg-[#1db954]/10 px-4 py-3 text-sm text-[#86efac]">
+              {successMessage}
+            </div>
+          )}
+
           {activeTab === 'login' && (
             <motion.form
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleSubmit}
+              onSubmit={handleLoginSubmit}
               className="space-y-5"
             >
               <div>
                 <label htmlFor="email" className="mb-2 block text-sm text-gray-400">
-                  Email or username
+                  Email
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-500" />
                   <input
                     id="email"
-                    type="text"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter your email or username"
+                    type="email"
+                    required
+                    value={loginFormData.email}
+                    onChange={(e) =>
+                      setLoginFormData({ ...loginFormData, email: e.target.value })
+                    }
+                    placeholder="Enter your email"
                     className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-11 py-3 text-white placeholder:text-gray-600 transition-colors focus:border-[#1db954] focus:outline-none"
                   />
                 </div>
@@ -101,8 +188,11 @@ export function Auth() {
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    value={loginFormData.password}
+                    onChange={(e) =>
+                      setLoginFormData({ ...loginFormData, password: e.target.value })
+                    }
                     placeholder="Enter your password"
                     className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-11 py-3 text-white placeholder:text-gray-600 transition-colors focus:border-[#1db954] focus:outline-none"
                   />
@@ -131,9 +221,10 @@ export function Auth() {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760]"
               >
-                Log In
+                {isSubmitting ? 'Logging In...' : 'Log In'}
               </button>
 
               <div className="text-center">
@@ -152,7 +243,7 @@ export function Auth() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
-              onSubmit={handleSubmit}
+              onSubmit={handleSignupSubmit}
               className="space-y-5"
             >
               <div>
@@ -164,6 +255,11 @@ export function Auth() {
                   <input
                     id="signup-email"
                     type="email"
+                    required
+                    value={signupFormData.email}
+                    onChange={(e) =>
+                      setSignupFormData({ ...signupFormData, email: e.target.value })
+                    }
                     placeholder="Enter your email"
                     className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-11 py-3 text-white placeholder:text-gray-600 transition-colors focus:border-[#1db954] focus:outline-none"
                   />
@@ -179,6 +275,12 @@ export function Auth() {
                   <input
                     id="signup-password"
                     type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={signupFormData.password}
+                    onChange={(e) =>
+                      setSignupFormData({ ...signupFormData, password: e.target.value })
+                    }
                     placeholder="Create a password"
                     className="w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-11 py-3 text-white placeholder:text-gray-600 transition-colors focus:border-[#1db954] focus:outline-none"
                   />
@@ -194,9 +296,10 @@ export function Auth() {
 
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760]"
               >
-                Sign Up
+                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
               </button>
             </motion.form>
           )}
