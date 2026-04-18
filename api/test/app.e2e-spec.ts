@@ -129,10 +129,45 @@ describe('HealthController (e2e)', () => {
       });
   });
 
-  it('/spotify/top-artists (GET) without userId', async () => {
+  it('/spotify/top-artists (GET) without token', async () => {
     await request(app.getHttpServer())
       .get('/spotify/top-artists')
-      .expect(400);
+      .expect(401);
+  });
+
+  it('/spotify/top-artists (GET) with invalid token', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/top-artists')
+      .set('Authorization', 'Bearer invalid-token')
+      .expect(401);
+  });
+
+  it('/spotify/top-artists (GET) with valid token but no Spotify connection', async () => {
+    const email = `spotify_${Date.now()}@example.com`;
+    const password = 'secret123';
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/spotify/top-artists?limit=10&time_range=medium_term')
+      .set('Authorization', `Bearer ${loginResponse.body.access_token}`)
+      .expect(404)
+      .expect((response) => {
+        expect(response.body.message).toBe(
+          'Spotify account not connected for this user',
+        );
+      });
   });
 
   afterEach(async () => {

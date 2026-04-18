@@ -1,5 +1,8 @@
-import { BadRequestException, Controller, Get, Query, Res } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { GetTopArtistsQueryDto } from './dto/get-top-artists-query.dto';
 import {
   SpotifyService,
@@ -27,15 +30,16 @@ export class SpotifyController {
   }
 
   @Get('top-artists')
+  @UseGuards(JwtAuthGuard)
   topArtists(
     @Query() query: GetTopArtistsQueryDto,
+    @CurrentUser() user: JwtPayload,
   ): Promise<SpotifyTopArtistsResponse> {
-    if (query.userId === undefined || Number.isNaN(query.userId)) {
-      throw new BadRequestException('userId is required');
+    if (!user?.sub) {
+      throw new BadRequestException('Authenticated user not found in request');
     }
 
-    // TODO: Replace query.userId with the authenticated user id once JWT auth is connected to request context.
-    return this.spotifyService.getTopArtists(query.userId, {
+    return this.spotifyService.getTopArtists(user.sub, {
       limit: query.limit,
       time_range: query.time_range,
     });

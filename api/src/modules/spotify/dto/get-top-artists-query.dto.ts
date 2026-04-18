@@ -1,13 +1,7 @@
 import { Transform } from 'class-transformer';
-import { IsDefined, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class GetTopArtistsQueryDto {
-  @IsDefined()
-  @Transform(({ value }) => Number(value))
-  @IsInt()
-  @Min(1)
-  userId: number;
-
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
