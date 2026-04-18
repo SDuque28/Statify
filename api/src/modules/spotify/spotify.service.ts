@@ -16,6 +16,34 @@ export interface SpotifyTokenResponse {
   scope?: string;
 }
 
+interface SpotifyTopArtistItem {
+  id: string;
+  name: string;
+  genres: string[];
+  popularity: number;
+  followers: {
+    total: number;
+  };
+  images: Array<{
+    url: string;
+    height: number | null;
+    width: number | null;
+  }>;
+  external_urls: {
+    spotify: string;
+  };
+}
+
+export interface SpotifyTopArtistsResponse {
+  items: SpotifyTopArtistItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  next: string | null;
+  previous: string | null;
+  href: string;
+}
+
 interface SpotifyErrorResponse {
   error?: {
     status?: number;
@@ -182,6 +210,30 @@ export class SpotifyService {
     }
 
     return responseBody as T;
+  }
+
+  getTopArtists(
+    userId: number,
+    options?: {
+      limit?: number;
+      time_range?: 'short_term' | 'medium_term' | 'long_term';
+    },
+  ) {
+    const searchParams = new URLSearchParams();
+
+    if (options?.limit !== undefined) {
+      searchParams.set('limit', String(options.limit));
+    }
+
+    if (options?.time_range) {
+      searchParams.set('time_range', options.time_range);
+    }
+
+    const endpoint = searchParams.size
+      ? `me/top/artists?${searchParams.toString()}`
+      : 'me/top/artists';
+
+    return this.makeSpotifyRequest<SpotifyTopArtistsResponse>(userId, endpoint);
   }
 
   private getRequiredEnv(name: string) {

@@ -129,6 +129,12 @@ describe('HealthController (e2e)', () => {
       });
   });
 
+  it('/spotify/top-artists (GET) without userId', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/top-artists')
+      .expect(400);
+  });
+
   afterEach(async () => {
     await app.close();
   });
