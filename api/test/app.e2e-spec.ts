@@ -104,6 +104,31 @@ describe('HealthController (e2e)', () => {
       });
   });
 
+  it('/spotify/login (GET)', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/login')
+      .expect(302)
+      .expect((response) => {
+        expect(response.headers.location).toContain(
+          'https://accounts.spotify.com/authorize?',
+        );
+        expect(response.headers.location).toContain('response_type=code');
+        expect(response.headers.location).toContain('client_id=your_client_id');
+        expect(response.headers.location).toContain(
+          encodeURIComponent('http://localhost:3000/spotify/callback'),
+        );
+      });
+  });
+
+  it('/spotify/callback (GET) without code', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/callback')
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('Missing Spotify authorization code');
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });
