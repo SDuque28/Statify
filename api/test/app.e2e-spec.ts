@@ -29,6 +29,36 @@ describe('HealthController (e2e)', () => {
       });
   });
 
+  it('/auth/register (POST)', async () => {
+    const email = `test_${Date.now()}@example.com`;
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email,
+        password: 'secret123',
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      id: expect.any(Number),
+      email,
+      createdAt: expect.any(String),
+    });
+    expect(response.body.password).toBeUndefined();
+
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email,
+        password: 'secret123',
+      })
+      .expect(409)
+      .expect((duplicateResponse) => {
+        expect(duplicateResponse.body.message).toBe('User already exists');
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });
