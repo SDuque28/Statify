@@ -1,19 +1,22 @@
 import { ArrowLeft, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { authStorage } from '../../services/auth-storage';
 import { ThemePreference } from '../components/ThemePreference';
 import { UserProfileCard } from '../components/UserProfileCard';
 
 export function Settings() {
   const navigate = useNavigate();
+  const user = authStorage.getUser();
   const userData = {
     profileImage:
       'https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3MTI5Mzg0MHww&ixlib=rb-4.1.0&q=80&w=1080',
-    displayName: 'Alex Thompson',
-    email: 'alex.thompson@email.com',
+    displayName: user?.email.split('@')[0] ?? 'Statify User',
+    email: user?.email ?? 'No active session',
   };
 
   const handleLogout = () => {
-    navigate('/');
+    authStorage.logout();
+    navigate('/auth');
   };
 
   return (

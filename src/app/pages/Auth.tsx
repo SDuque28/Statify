@@ -1,9 +1,10 @@
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import logo from '../../imports/LogoWhite.svg';
 import { AuthServiceError, authService } from '../../services/auth.service';
+import { authStorage } from '../../services/auth-storage';
 
 export function Auth() {
   const navigate = useNavigate();
@@ -21,6 +22,12 @@ export function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authStorage.isAuthenticated()) {
+      navigate('/home', { replace: true });
+    }
+  }, [navigate]);
 
   const resetFeedback = () => {
     setErrorMessage(null);
@@ -55,7 +62,12 @@ export function Auth() {
     setIsSubmitting(true);
 
     try {
-      await authService.login(loginFormData.email.trim(), loginFormData.password);
+      const session = await authService.login(
+        loginFormData.email.trim(),
+        loginFormData.password,
+      );
+
+      authStorage.setSession(session);
       navigate('/home');
     } catch (error) {
       setErrorMessage(getFriendlyMessage(error));
