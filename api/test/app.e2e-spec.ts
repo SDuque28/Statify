@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -56,6 +57,50 @@ describe('HealthController (e2e)', () => {
       .expect(409)
       .expect((duplicateResponse) => {
         expect(duplicateResponse.body.message).toBe('User already exists');
+      });
+  });
+
+  it('/auth/login (POST)', async () => {
+    const email = `login_${Date.now()}@example.com`;
+    const password = 'secret123';
+    const jwtService = app.get(JwtService);
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      access_token: expect.any(String),
+      user: {
+        id: expect.any(Number),
+        email,
+      },
+    });
+    expect(response.body.user.password).toBeUndefined();
+
+    const payload = await jwtService.verifyAsync(response.body.access_token);
+
+    expect(payload.sub).toBe(response.body.user.id);
+    expect(payload.email).toBe(email);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password: 'wrongpass',
+      })
+      .expect(401)
+      .expect((invalidResponse) => {
+        expect(invalidResponse.body.message).toBe('Invalid credentials');
       });
   });
 
