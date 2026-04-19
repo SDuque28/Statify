@@ -6,6 +6,7 @@ import { SpotifyQueryOptionsDto } from './dto/spotify-query-options.dto';
 import {
   SpotifyService,
   type SimplifiedSpotifyTrack,
+  type SpotifyYearInMusicSummary,
 } from './spotify.service';
 
 @Controller('me')
@@ -26,5 +27,15 @@ export class MeController {
       limit: query.limit,
       time_range: query.time_range,
     });
+  }
+
+  @Get('year-summary')
+  @UseGuards(JwtAuthGuard)
+  yearSummary(@CurrentUser() user: JwtPayload): Promise<SpotifyYearInMusicSummary> {
+    if (!user?.sub) {
+      throw new BadRequestException('Authenticated user not found in request');
+    }
+
+    return this.spotifyService.getYearInMusicSummary(user.sub);
   }
 }

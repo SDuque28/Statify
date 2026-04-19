@@ -105,6 +105,37 @@ export interface SimplifiedSpotifyTrack {
   popularity: number;
 }
 
+export interface SimplifiedSpotifyArtist {
+  id: string;
+  name: string;
+  genres: string[];
+  image: string | null;
+  popularity: number;
+}
+
+export interface SpotifyYearInMusicSummary {
+  period: {
+    type: 'spotify_long_term';
+    description: string;
+    generatedAt: string;
+  };
+  topGenre: string | null;
+  topGenreFrequency: number;
+  topTracksAvailable: number;
+  topArtistsAvailable: number;
+  topTracks: SimplifiedSpotifyTrack[];
+  topArtists: SimplifiedSpotifyArtist[];
+  unsupportedMetrics: {
+    minutesListened: string;
+    monthlyMinutes: string;
+    totalTracksListened: string;
+  };
+  sources: Array<{
+    endpoint: string;
+    use: string;
+  }>;
+}
+
 interface SpotifyErrorResponse {
   error?: {
     status?: number;
@@ -535,6 +566,107 @@ export class SpotifyService {
       : 'me/top/artists';
 
     return this.makeSpotifyRequest<SpotifyTopArtistsResponse>(userId, endpoint);
+  }
+
+  async getYearInMusicSummary(userId: number): Promise<SpotifyYearInMusicSummary> {
+    const [topTracksResponse, topArtistsResponse] = await Promise.all([
+      this.makeSpotifyRequest<SpotifyTopTracksResponse>(
+        userId,
+        'me/top/tracks?time_range=long_term&limit=10',
+      ),
+      this.getTopArtists(userId, {
+        limit: 10,
+        time_range: 'long_term',
+      }),
+    ]);
+
+    const topTrackItems = Array.isArray(topTracksResponse?.items)
+      ? topTracksResponse.items
+      : [];
+    const topArtistItems = Array.isArray(topArtistsResponse?.items)
+      ? topArtistsResponse.items
+      : [];
+
+    const simplifiedTopTracks = topTrackItems.map((track) => ({
+      id: typeof track?.id === 'string' ? track.id : '',
+      name: typeof track?.name === 'string' ? track.name : 'Unknown track',
+      artists: Array.isArray(track?.artists)
+        ? track.artists
+            .map((artist) => (typeof artist?.name === 'string' ? artist.name : ''))
+            .filter((artistName) => artistName.length > 0)
+        : [],
+      album:
+        track?.album && typeof track.album.name === 'string'
+          ? track.album.name
+          : 'Unknown album',
+      image:
+        track?.album && Array.isArray(track.album.images)
+          ? track.album.images[0]?.url ?? null
+          : null,
+      popularity: typeof track?.popularity === 'number' ? track.popularity : 0,
+    }));
+
+    const simplifiedTopArtists = topArtistItems.map((artist) => ({
+      id: typeof artist?.id === 'string' ? artist.id : '',
+      name: typeof artist?.name === 'string' ? artist.name : 'Unknown artist',
+      genres: Array.isArray(artist?.genres)
+        ? artist.genres.filter((genre): genre is string => typeof genre === 'string')
+        : [],
+      image: Array.isArray(artist?.images) ? artist.images[0]?.url ?? null : null,
+      popularity: typeof artist?.popularity === 'number' ? artist.popularity : 0,
+    }));
+
+    const genreCounts = new Map<string, number>();
+
+    for (const artist of topArtistItems) {
+      const genres = Array.isArray(artist?.genres) ? artist.genres : [];
+
+      for (const genre of genres) {
+        genreCounts.set(genre, (genreCounts.get(genre) ?? 0) + 1);
+      }
+    }
+
+    const [topGenre = null, topGenreFrequency = 0] =
+      [...genreCounts.entries()].sort((left, right) => right[1] - left[1])[0] ?? [];
+
+    return {
+      period: {
+        type: 'spotify_long_term',
+        description:
+          'Based on Spotify long_term affinity data, which Spotify documents as approximately the last 1 year rather than a strict calendar year.',
+        generatedAt: new Date().toISOString(),
+      },
+      topGenre,
+      topGenreFrequency,
+      topTracksAvailable:
+        typeof topTracksResponse?.total === 'number'
+          ? topTracksResponse.total
+          : simplifiedTopTracks.length,
+      topArtistsAvailable:
+        typeof topArtistsResponse?.total === 'number'
+          ? topArtistsResponse.total
+          : simplifiedTopArtists.length,
+      topTracks: simplifiedTopTracks,
+      topArtists: simplifiedTopArtists,
+      unsupportedMetrics: {
+        minutesListened:
+          'Spotify Web API does not expose yearly minutes listened for the current user.',
+        monthlyMinutes:
+          'Spotify Web API does not expose month-by-month listening totals for the current user.',
+        totalTracksListened:
+          'Spotify Web API does not expose the total number of tracks the current user listened to over a year.',
+      },
+      sources: [
+        {
+          endpoint: 'GET /v1/me/top/tracks?time_range=long_term&limit=10',
+          use: 'Top tracks for the user over Spotify long_term affinity data.',
+        },
+        {
+          endpoint: 'GET /v1/me/top/artists?time_range=long_term&limit=10',
+          use: 'Top artists plus genre inference for the year summary.',
+        },
+      ],
+    };
   }
 
   private async makeSpotifyRequestWithAccessToken<T>(

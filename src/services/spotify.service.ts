@@ -52,6 +52,37 @@ export interface SpotifyTopTrack {
   popularity: number;
 }
 
+export interface SpotifyYearSummaryArtist {
+  id: string;
+  name: string;
+  genres: string[];
+  image: string | null;
+  popularity: number;
+}
+
+export interface SpotifyYearInMusicSummary {
+  period: {
+    type: 'spotify_long_term';
+    description: string;
+    generatedAt: string;
+  };
+  topGenre: string | null;
+  topGenreFrequency: number;
+  topTracksAvailable: number;
+  topArtistsAvailable: number;
+  topTracks: SpotifyTopTrack[];
+  topArtists: SpotifyYearSummaryArtist[];
+  unsupportedMetrics: {
+    minutesListened: string;
+    monthlyMinutes: string;
+    totalTracksListened: string;
+  };
+  sources: Array<{
+    endpoint: string;
+    use: string;
+  }>;
+}
+
 export class SpotifyServiceError extends Error {
   readonly status: number;
 
@@ -135,6 +166,9 @@ export const spotifyService = {
       limit,
       time_range: timeRange,
     });
+  },
+  getYearSummary() {
+    return get<SpotifyYearInMusicSummary>('/me/year-summary');
   },
   getConnectionStatus() {
     return get<SpotifyConnectionStatusResponse>('/spotify/status');
