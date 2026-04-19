@@ -35,6 +35,9 @@ export interface SpotifyConnectionStatusResponse {
   spotifyAccountId: string | null;
   spotifyDisplayName: string | null;
   spotifyEmail: string | null;
+  spotifyProfileImageUrl: string | null;
+  spotifyCountry: string | null;
+  spotifyProduct: string | null;
   spotifyConnectedAt: string | null;
   spotifyTokenExpiresAt: string | null;
 }

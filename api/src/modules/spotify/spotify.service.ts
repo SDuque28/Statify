@@ -79,6 +79,13 @@ interface SpotifyProfileResponse {
   id: string;
   email?: string;
   display_name?: string | null;
+  country?: string;
+  product?: string;
+  images?: Array<{
+    url: string;
+    height: number | null;
+    width: number | null;
+  }>;
 }
 
 interface SpotifyStoredTokenInfo {
@@ -92,6 +99,9 @@ export interface SpotifyConnectionStatusResponse {
   spotifyAccountId: string | null;
   spotifyDisplayName: string | null;
   spotifyEmail: string | null;
+  spotifyProfileImageUrl: string | null;
+  spotifyCountry: string | null;
+  spotifyProduct: string | null;
   spotifyConnectedAt: Date | null;
   spotifyTokenExpiresAt: Date | null;
 }
@@ -320,6 +330,9 @@ export class SpotifyService {
       spotifyAccountId: user.spotifyAccountId ?? null,
       spotifyDisplayName: user.spotifyDisplayName ?? null,
       spotifyEmail: user.spotifyEmail ?? null,
+      spotifyProfileImageUrl: profile.images?.[0]?.url ?? null,
+      spotifyCountry: profile.country ?? null,
+      spotifyProduct: profile.product ?? null,
       spotifyConnectedAt: user.spotifyConnectedAt,
       spotifyTokenExpiresAt: user.spotifyTokenExpiresAt,
     };
@@ -410,11 +423,20 @@ export class SpotifyService {
       throw new NotFoundException('User not found');
     }
 
+    let profile: SpotifyProfileResponse | null = null;
+
+    if (user.spotifyAccessToken) {
+      profile = await this.makeSpotifyRequest<SpotifyProfileResponse>(userId, 'me');
+    }
+
     return {
       connected: Boolean(user.spotifyAccessToken),
-      spotifyAccountId: user.spotifyAccountId ?? null,
-      spotifyDisplayName: user.spotifyDisplayName ?? null,
-      spotifyEmail: user.spotifyEmail ?? null,
+      spotifyAccountId: profile?.id ?? user.spotifyAccountId ?? null,
+      spotifyDisplayName: profile?.display_name ?? user.spotifyDisplayName ?? null,
+      spotifyEmail: profile?.email ?? user.spotifyEmail ?? null,
+      spotifyProfileImageUrl: profile?.images?.[0]?.url ?? null,
+      spotifyCountry: profile?.country ?? null,
+      spotifyProduct: profile?.product ?? null,
       spotifyConnectedAt: user.spotifyConnectedAt,
       spotifyTokenExpiresAt: user.spotifyTokenExpiresAt,
     };
@@ -441,6 +463,9 @@ export class SpotifyService {
       spotifyAccountId: null,
       spotifyDisplayName: null,
       spotifyEmail: null,
+      spotifyProfileImageUrl: null,
+      spotifyCountry: null,
+      spotifyProduct: null,
       spotifyConnectedAt: null,
       spotifyTokenExpiresAt: null,
     };
