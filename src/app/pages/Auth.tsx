@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import logo from '../../imports/LogoWhite.svg';
 import { AuthServiceError, authService } from '../../services/auth.service';
 import { authStorage } from '../../services/auth-storage';
+import { SpotifyServiceError, spotifyService } from '../../services/spotify.service';
 
 export function Auth() {
   const navigate = useNavigate();
@@ -47,6 +48,14 @@ export function Auth() {
       return error.message;
     }
 
+    if (error instanceof SpotifyServiceError) {
+      if (error.status === 401) {
+        return 'Your session expired before Spotify could connect. Please try again.';
+      }
+
+      return error.message;
+    }
+
     return 'Unable to reach the server right now. Please try again.';
   };
 
@@ -67,9 +76,22 @@ export function Auth() {
         loginFormData.password,
       );
 
+      authStorage.logout();
       authStorage.setSession(session);
-      navigate('/home');
+      const spotifyStatus = await spotifyService.getConnectionStatus();
+
+      if (spotifyStatus.connected) {
+        navigate('/home');
+        return;
+      }
+
+      const authUrl = await spotifyService.getConnectUrl();
+      window.location.assign(authUrl);
     } catch (error) {
+      if (error instanceof SpotifyServiceError && error.status === 401) {
+        authStorage.logout();
+      }
+
       setErrorMessage(getFriendlyMessage(error));
     } finally {
       setIsSubmitting(false);

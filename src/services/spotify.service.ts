@@ -30,6 +30,19 @@ export interface SpotifyTopArtistsResponse {
   href: string;
 }
 
+export interface SpotifyConnectionStatusResponse {
+  connected: boolean;
+  spotifyAccountId: string | null;
+  spotifyDisplayName: string | null;
+  spotifyEmail: string | null;
+  spotifyConnectedAt: string | null;
+  spotifyTokenExpiresAt: string | null;
+}
+
+interface SpotifyConnectUrlResponse {
+  authUrl: string;
+}
+
 export class SpotifyServiceError extends Error {
   readonly status: number;
 
@@ -107,5 +120,12 @@ export const spotifyService = {
       limit,
       time_range: timeRange,
     });
+  },
+  getConnectionStatus() {
+    return get<SpotifyConnectionStatusResponse>('/spotify/status');
+  },
+  async getConnectUrl() {
+    const response = await get<SpotifyConnectUrlResponse>('/spotify/connect-url');
+    return response.authUrl;
   },
 };

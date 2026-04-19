@@ -3,11 +3,13 @@ import { randomBytes } from 'node:crypto';
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 export interface SpotifyTokenResponse {
@@ -99,6 +101,7 @@ export class SpotifyService {
       redirect_uri: this.redirectUri,
       scope: this.scopes.join(' '),
       state,
+      show_dialog: 'true',
     });
 
     return `https://accounts.spotify.com/authorize?${searchParams.toString()}`;
@@ -177,28 +180,64 @@ export class SpotifyService {
     profile?: SpotifyProfileResponse,
   ) {
     const spotifyTokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
+    const connectedAt = new Date();
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        spotifyAccountId: profile?.id,
-        spotifyEmail: profile?.email ?? null,
-        spotifyDisplayName: profile?.display_name ?? null,
-        spotifyAccessToken: tokens.access_token,
-        spotifyRefreshToken: tokens.refresh_token ?? null,
-        spotifyTokenExpiresAt,
-        spotifyConnectedAt: new Date(),
-      },
-      select: {
-        id: true,
-        email: true,
-        spotifyAccountId: true,
-        spotifyEmail: true,
-        spotifyDisplayName: true,
-        spotifyTokenExpiresAt: true,
-        spotifyConnectedAt: true,
-      },
-    });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        if (profile?.id) {
+          await tx.user.updateMany({
+            where: {
+              spotifyAccountId: profile.id,
+              NOT: {
+                id: userId,
+              },
+            },
+            data: {
+              spotifyAccountId: null,
+              spotifyEmail: null,
+              spotifyDisplayName: null,
+              spotifyAccessToken: null,
+              spotifyRefreshToken: null,
+              spotifyTokenExpiresAt: null,
+              spotifyConnectedAt: null,
+            },
+          });
+        }
+
+        return tx.user.update({
+          where: { id: userId },
+          data: {
+            spotifyAccountId: profile?.id,
+            spotifyEmail: profile?.email ?? null,
+            spotifyDisplayName: profile?.display_name ?? null,
+            spotifyAccessToken: tokens.access_token,
+            spotifyRefreshToken: tokens.refresh_token ?? null,
+            spotifyTokenExpiresAt,
+            spotifyConnectedAt: connectedAt,
+          },
+          select: {
+            id: true,
+            email: true,
+            spotifyAccountId: true,
+            spotifyEmail: true,
+            spotifyDisplayName: true,
+            spotifyTokenExpiresAt: true,
+            spotifyConnectedAt: true,
+          },
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'This Spotify account is already linked to another Statify user.',
+        );
+      }
+
+      throw error;
+    }
   }
 
   async getSpotifyConnectionStatus(

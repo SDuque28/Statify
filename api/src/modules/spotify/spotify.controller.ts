@@ -22,6 +22,14 @@ import {
 export class SpotifyController {
   constructor(private readonly spotifyService: SpotifyService) {}
 
+  @Get('connect-url')
+  @UseGuards(JwtAuthGuard)
+  connectUrl(@CurrentUser() user: JwtPayload) {
+    return {
+      authUrl: this.spotifyService.getConnectAuthorizationUrl(user.sub),
+    };
+  }
+
   @Get('connect')
   @UseGuards(JwtAuthGuard)
   connect(@CurrentUser() user: JwtPayload, @Res() response: Response) {

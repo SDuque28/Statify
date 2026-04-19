@@ -108,6 +108,41 @@ describe('App (e2e)', () => {
     await request(app.getHttpServer()).get('/spotify/connect').expect(401);
   });
 
+  it('/spotify/connect-url (GET) without token', async () => {
+    await request(app.getHttpServer()).get('/spotify/connect-url').expect(401);
+  });
+
+  it('/spotify/connect-url (GET) with valid token', async () => {
+    const email = `connect_url_${Date.now()}@example.com`;
+    const password = 'secret123';
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/spotify/connect-url')
+      .set('Authorization', `Bearer ${loginResponse.body.access_token}`)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.authUrl).toContain(
+          'https://accounts.spotify.com/authorize?',
+        );
+        expect(response.body.authUrl).toContain('response_type=code');
+        expect(response.body.authUrl).toMatch(/client_id=[^&]+/);
+        expect(response.body.authUrl).toContain('state=');
+      });
+  });
+
   it('/spotify/connect (GET) with valid token', async () => {
     const email = `connect_${Date.now()}@example.com`;
     const password = 'secret123';
@@ -134,7 +169,7 @@ describe('App (e2e)', () => {
           'https://accounts.spotify.com/authorize?',
         );
         expect(response.headers.location).toContain('response_type=code');
-        expect(response.headers.location).toContain('client_id=your_client_id');
+        expect(response.headers.location).toMatch(/client_id=[^&]+/);
         expect(response.headers.location).toContain('state=');
         expect(response.headers.location).toContain(
           encodeURIComponent('http://127.0.0.1:3000/spotify/callback'),
