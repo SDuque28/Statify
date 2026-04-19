@@ -10,6 +10,7 @@ import { SpotifyServiceError, spotifyService } from '../../services/spotify.serv
 export function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -21,14 +22,19 @@ export function Auth() {
     email: '',
     password: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionState, setSubmissionState] = useState<
+    'idle' | 'login' | 'signup' | 'spotify_status' | 'spotify_redirect'
+  >('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (authStorage.isAuthenticated()) {
       navigate('/home', { replace: true });
+      return;
     }
+
+    setIsCheckingSession(false);
   }, [navigate]);
 
   useEffect(() => {
@@ -80,7 +86,7 @@ export function Auth() {
     e.preventDefault();
 
     resetFeedback();
-    setIsSubmitting(true);
+    setSubmissionState('login');
 
     try {
       const session = await authService.login(
@@ -90,6 +96,7 @@ export function Auth() {
 
       authStorage.logout();
       authStorage.setSession(session);
+      setSubmissionState('spotify_status');
       const spotifyStatus = await spotifyService.getConnectionStatus();
 
       if (spotifyStatus.connected) {
@@ -97,6 +104,7 @@ export function Auth() {
         return;
       }
 
+      setSubmissionState('spotify_redirect');
       const authUrl = await spotifyService.getConnectUrl();
       window.location.assign(authUrl);
     } catch (error) {
@@ -106,7 +114,7 @@ export function Auth() {
 
       setErrorMessage(getFriendlyMessage(error));
     } finally {
-      setIsSubmitting(false);
+      setSubmissionState('idle');
     }
   };
 
@@ -114,7 +122,7 @@ export function Auth() {
     e.preventDefault();
 
     resetFeedback();
-    setIsSubmitting(true);
+    setSubmissionState('signup');
 
     try {
       const email = signupFormData.email.trim();
@@ -133,9 +141,36 @@ export function Auth() {
     } catch (error) {
       setErrorMessage(getFriendlyMessage(error));
     } finally {
-      setIsSubmitting(false);
+      setSubmissionState('idle');
     }
   };
+
+  const isSubmitting = submissionState !== 'idle';
+  const loginButtonLabel =
+    submissionState === 'login'
+      ? 'Logging In...'
+      : submissionState === 'spotify_status'
+        ? 'Checking Spotify...'
+        : submissionState === 'spotify_redirect'
+          ? 'Redirecting to Spotify...'
+          : 'Log In';
+  const signupButtonLabel =
+    submissionState === 'signup' ? 'Creating Account...' : 'Sign Up';
+
+  if (isCheckingSession) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/10 via-transparent to-[#1db954]/5" />
+        <div className="absolute left-20 top-20 h-96 w-96 rounded-full bg-[#1db954]/20 blur-[100px]" />
+        <div className="absolute bottom-20 right-20 h-96 w-96 rounded-full bg-[#1db954]/10 blur-[100px]" />
+        <div className="relative w-full max-w-md rounded-2xl border border-white/5 bg-[#121212] p-8 text-center shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-2 border-white/10 border-t-[#1db954]" />
+          <h1 className="mb-2 text-2xl text-white">Loading Statify</h1>
+          <p className="text-sm text-gray-400">Checking your current session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8">
@@ -268,9 +303,9 @@ export function Auth() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760]"
+                className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 disabled:hover:bg-[#1db954]"
               >
-                {isSubmitting ? 'Logging In...' : 'Log In'}
+                {loginButtonLabel}
               </button>
 
               <div className="text-center">
@@ -343,9 +378,9 @@ export function Auth() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760]"
+                className="w-full rounded-full bg-[#1db954] py-3.5 text-white shadow-lg shadow-[#1db954]/30 transition-all hover:scale-[1.02] hover:bg-[#1ed760] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100 disabled:hover:bg-[#1db954]"
               >
-                {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                {signupButtonLabel}
               </button>
             </motion.form>
           )}
