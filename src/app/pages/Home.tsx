@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { ArtistCard } from '../components/ArtistCard';
 import { TrackItem } from '../components/TrackItem';
 import { YearSummaryCard } from '../components/YearSummaryCard';
@@ -8,11 +9,14 @@ import {
   spotifyService,
   type SpotifyArtist,
 } from '../../services/spotify.service';
+import { authStorage } from '../../services/auth-storage';
 
 export function Home() {
+  const navigate = useNavigate();
   const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([]);
   const [isLoadingTopArtists, setIsLoadingTopArtists] = useState(true);
   const [topArtistsError, setTopArtistsError] = useState<string | null>(null);
+  const artistSlots = topArtists.length > 0 ? topArtists.length : 5;
 
   const topTracks = [
     {
@@ -72,7 +76,13 @@ export function Home() {
           }
 
           if (error.status === 401) {
-            setTopArtistsError('Your session expired. Please log in again to load Spotify data.');
+            authStorage.logout();
+            navigate('/auth', {
+              replace: true,
+              state: {
+                reason: 'session_expired',
+              },
+            });
             return;
           }
 
@@ -93,7 +103,7 @@ export function Home() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="h-full w-full p-8">
@@ -124,11 +134,19 @@ export function Home() {
         >
           <h2 className="mb-6 text-2xl text-[var(--text-primary)]">Top Artists This Month</h2>
           {isLoadingTopArtists ? (
-            <div className="flex gap-6 overflow-x-auto pb-2">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={`artist-skeleton-${index}`} className="flex min-w-[144px] flex-col items-center gap-3">
-                  <div className="size-36 animate-pulse rounded-full bg-[var(--border-color)]/60" />
-                  <div className="h-4 w-24 animate-pulse rounded bg-[var(--border-color)]/60" />
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${artistSlots}, minmax(0, 1fr))`,
+              }}
+            >
+              {Array.from({ length: artistSlots }).map((_, index) => (
+                <div
+                  key={`artist-skeleton-${index}`}
+                  className="flex min-w-0 flex-col items-center gap-4 rounded-3xl px-3 py-4"
+                >
+                  <div className="aspect-square w-full max-w-48 animate-pulse rounded-full bg-[var(--border-color)]/60" />
+                  <div className="h-4 w-full max-w-28 animate-pulse rounded bg-[var(--border-color)]/60" />
                 </div>
               ))}
             </div>
@@ -141,7 +159,12 @@ export function Home() {
               No top artists available yet for this time range.
             </div>
           ) : (
-            <div className="flex gap-6 overflow-x-auto pb-2">
+            <div
+              className="grid gap-4"
+              style={{
+                gridTemplateColumns: `repeat(${topArtists.length}, minmax(0, 1fr))`,
+              }}
+            >
               {topArtists.map((artist, index) => (
                 <motion.a
                   key={artist.id}
@@ -151,7 +174,7 @@ export function Home() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
-                  className="block"
+                  className="block min-w-0"
                 >
                   <ArtistCard
                     name={artist.name}
@@ -176,7 +199,7 @@ export function Home() {
           <div className="space-y-2">
             {topTracks.map((track, index) => (
               <motion.div
-                key={track.trackName}
+                key={`${track.trackName}-${track.artistName}-${index}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1 }}

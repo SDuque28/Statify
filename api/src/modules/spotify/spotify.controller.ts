@@ -39,11 +39,12 @@ export class SpotifyController {
   }
 
   @Get('callback')
-  callback(
+  async callback(
     @Query('code') code?: string,
     @Query('state') state?: string,
     @Query('error') error?: string,
-  ): Promise<SpotifyConnectionStatusResponse> {
+    @Res() response?: Response,
+  ): Promise<void> {
     if (error) {
       throw new BadRequestException(`Spotify authorization failed: ${error}`);
     }
@@ -56,7 +57,8 @@ export class SpotifyController {
       throw new BadRequestException('Missing Spotify authorization code');
     }
 
-    return this.spotifyService.connectSpotifyAccount(code, state);
+    await this.spotifyService.connectSpotifyAccount(code, state);
+    response?.redirect(this.getFrontendRedirectUrl('/home', { spotify: 'connected' }));
   }
 
   @Get('top-artists')
@@ -87,5 +89,21 @@ export class SpotifyController {
     @CurrentUser() user: JwtPayload,
   ): Promise<SpotifyConnectionStatusResponse> {
     return this.spotifyService.disconnectSpotifyAccount(user.sub);
+  }
+
+  private getFrontendRedirectUrl(
+    path: string,
+    params?: Record<string, string>,
+  ) {
+    const frontendAppUrl = process.env.FRONTEND_APP_URL ?? 'http://localhost:5173';
+    const redirectUrl = new URL(path, frontendAppUrl);
+
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        redirectUrl.searchParams.set(key, value);
+      }
+    }
+
+    return redirectUrl.toString();
   }
 }

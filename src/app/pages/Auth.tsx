@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import logo from '../../imports/LogoWhite.svg';
 import { AuthServiceError, authService } from '../../services/auth.service';
 import { authStorage } from '../../services/auth-storage';
@@ -9,6 +9,7 @@ import { SpotifyServiceError, spotifyService } from '../../services/spotify.serv
 
 export function Auth() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -29,6 +30,17 @@ export function Auth() {
       navigate('/home', { replace: true });
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (location.state && typeof location.state === 'object' && 'reason' in location.state) {
+      const state = location.state as { reason?: string };
+
+      if (state.reason === 'session_expired') {
+        setErrorMessage('Your session expired. Please log in again.');
+        navigate(location.pathname, { replace: true, state: null });
+      }
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const resetFeedback = () => {
     setErrorMessage(null);

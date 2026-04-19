@@ -61,10 +61,10 @@ export function YearSummaryCard() {
         </div>
 
         <div className={theme === 'light'
-          ? 'h-48 bg-white/50 backdrop-blur-sm rounded-lg p-4 border border-[var(--border-color)]'
-          : 'h-48 bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-[var(--border-color)]'
+          ? 'h-48 min-w-0 bg-white/50 backdrop-blur-sm rounded-lg border border-[var(--border-color)] p-4'
+          : 'h-48 min-w-0 bg-black/30 backdrop-blur-sm rounded-lg border border-[var(--border-color)] p-4'
         }>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={160}>
             <LineChart data={monthlyData} className="w-full">
               <XAxis dataKey="month" stroke="#666" style={{ fontSize: '12px' }} />
               <YAxis stroke="#666" style={{ fontSize: '12px' }} />

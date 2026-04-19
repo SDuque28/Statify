@@ -54,6 +54,12 @@ interface SpotifyProfileResponse {
   display_name?: string | null;
 }
 
+interface SpotifyStoredTokenInfo {
+  spotifyAccessToken: string | null;
+  spotifyRefreshToken: string | null;
+  spotifyTokenExpiresAt: Date | null;
+}
+
 export interface SpotifyConnectionStatusResponse {
   connected: boolean;
   spotifyAccountId: string | null;
@@ -149,6 +155,84 @@ export class SpotifyService {
     }
 
     return responseBody;
+  }
+
+  async refreshAccessTokenForUser(
+    userId: number,
+    storedTokenInfo?: SpotifyStoredTokenInfo,
+  ) {
+    const tokenInfo =
+      storedTokenInfo ??
+      (await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          spotifyAccessToken: true,
+          spotifyRefreshToken: true,
+          spotifyTokenExpiresAt: true,
+        },
+      }));
+
+    if (!tokenInfo?.spotifyRefreshToken) {
+      throw new UnauthorizedException(
+        'Spotify token expired and no refresh token is available. Please reconnect your account.',
+      );
+    }
+
+    const response = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(
+          `${this.clientId}:${this.clientSecret}`,
+        ).toString('base64')}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: tokenInfo.spotifyRefreshToken,
+      }),
+    });
+
+    const responseBody = (await response.json().catch(() => null)) as
+      | SpotifyTokenResponse
+      | SpotifyErrorResponse
+      | null;
+
+    if (!response.ok) {
+      const message =
+        this.getSpotifyErrorMessage(
+          responseBody,
+          'Unable to refresh Spotify access token',
+        ) ?? 'Unable to refresh Spotify access token';
+
+      throw new UnauthorizedException(
+        message === 'invalid_grant'
+          ? 'Spotify refresh token is no longer valid. Please reconnect your account.'
+          : message,
+      );
+    }
+
+    if (
+      !responseBody ||
+      typeof responseBody !== 'object' ||
+      !('access_token' in responseBody) ||
+      !('expires_in' in responseBody)
+    ) {
+      throw new InternalServerErrorException('Spotify refresh token response is invalid');
+    }
+
+    const spotifyTokenExpiresAt = new Date(Date.now() + responseBody.expires_in * 1000);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        spotifyAccessToken: responseBody.access_token,
+        spotifyRefreshToken:
+          responseBody.refresh_token ?? tokenInfo.spotifyRefreshToken,
+        spotifyTokenExpiresAt,
+      },
+    });
+
+    return responseBody.access_token;
   }
 
   async connectSpotifyAccount(
@@ -300,6 +384,7 @@ export class SpotifyService {
       where: { id: userId },
       select: {
         spotifyAccessToken: true,
+        spotifyRefreshToken: true,
         spotifyTokenExpiresAt: true,
       },
     });
@@ -312,16 +397,25 @@ export class SpotifyService {
       user.spotifyTokenExpiresAt &&
       user.spotifyTokenExpiresAt.getTime() <= Date.now()
     ) {
-      // TODO: Refresh the Spotify access token with the stored refresh token.
-      throw new UnauthorizedException('Spotify token expired');
+      return this.refreshAccessTokenForUser(userId, user);
     }
 
     return user.spotifyAccessToken;
   }
 
   async makeSpotifyRequest<T>(userId: number, endpoint: string): Promise<T> {
-    const accessToken = await this.getAccessToken(userId);
-    return this.makeSpotifyRequestWithAccessToken<T>(accessToken, endpoint);
+    let accessToken = await this.getAccessToken(userId);
+
+    try {
+      return await this.makeSpotifyRequestWithAccessToken<T>(accessToken, endpoint);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        accessToken = await this.refreshAccessTokenForUser(userId);
+        return this.makeSpotifyRequestWithAccessToken<T>(accessToken, endpoint);
+      }
+
+      throw error;
+    }
   }
 
   getTopArtists(
@@ -372,23 +466,13 @@ export class SpotifyService {
       | null;
 
     if (response.status === 401) {
-      // TODO: Trigger refresh flow when refresh-token support is implemented.
       throw new UnauthorizedException('Spotify token expired');
     }
 
     if (!response.ok) {
-      const message =
-        responseBody &&
-        typeof responseBody === 'object' &&
-        'error' in responseBody &&
-        responseBody.error &&
-        typeof responseBody.error === 'object' &&
-        'message' in responseBody.error &&
-        typeof responseBody.error.message === 'string'
-          ? responseBody.error.message
-          : 'Spotify API request failed';
-
-      throw new BadGatewayException(message);
+      throw new BadGatewayException(
+        this.getSpotifyErrorMessage(responseBody, 'Spotify API request failed'),
+      );
     }
 
     return responseBody as T;
@@ -430,6 +514,33 @@ export class SpotifyService {
         this.stateStore.delete(state);
       }
     }
+  }
+
+  private getSpotifyErrorMessage(payload: unknown, fallback: string) {
+    if (payload && typeof payload === 'object') {
+      if (
+        'error_description' in payload &&
+        typeof payload.error_description === 'string'
+      ) {
+        return payload.error_description;
+      }
+
+      if (
+        'error' in payload &&
+        typeof payload.error === 'object' &&
+        payload.error &&
+        'message' in payload.error &&
+        typeof payload.error.message === 'string'
+      ) {
+        return payload.error.message;
+      }
+
+      if ('error' in payload && typeof payload.error === 'string') {
+        return payload.error;
+      }
+    }
+
+    return fallback;
   }
 
   private getRequiredEnv(name: string) {
