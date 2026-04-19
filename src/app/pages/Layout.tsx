@@ -5,7 +5,7 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Header />
-      <main>
+      <main className="w-full">
         <Outlet />
       </main>
     </div>

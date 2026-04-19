@@ -159,11 +159,11 @@ export function Auth() {
 
   if (isCheckingSession) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8">
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8 sm:px-6">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/10 via-transparent to-[#1db954]/5" />
         <div className="absolute left-20 top-20 h-96 w-96 rounded-full bg-[#1db954]/20 blur-[100px]" />
         <div className="absolute bottom-20 right-20 h-96 w-96 rounded-full bg-[#1db954]/10 blur-[100px]" />
-        <div className="relative w-full max-w-md rounded-2xl border border-white/5 bg-[#121212] p-8 text-center shadow-2xl backdrop-blur-xl">
+        <div className="relative w-full max-w-md rounded-2xl border border-white/5 bg-[#121212] p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8">
           <div className="mx-auto mb-4 size-10 animate-spin rounded-full border-2 border-white/10 border-t-[#1db954]" />
           <h1 className="mb-2 text-2xl text-white">Loading Statify</h1>
           <p className="text-sm text-gray-400">Checking your current session...</p>
@@ -173,24 +173,24 @@ export function Auth() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-8">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 py-6 sm:px-6 sm:py-8">
       <div className="absolute inset-0 bg-gradient-to-br from-[#1db954]/10 via-transparent to-[#1db954]/5" />
       <div className="absolute left-20 top-20 h-96 w-96 rounded-full bg-[#1db954]/20 blur-[100px]" />
       <div className="absolute bottom-20 right-20 h-96 w-96 rounded-full bg-[#1db954]/10 blur-[100px]" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         className="relative w-full max-w-md"
       >
-        <div className="rounded-2xl border border-white/5 bg-[#121212] p-8 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/5 bg-[#121212] p-5 shadow-2xl backdrop-blur-xl sm:p-8">
           <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <h1 className="text-3xl tracking-tight">
+            <div className="mb-2 flex items-center justify-center gap-3">
+              <h1 className="text-2xl tracking-tight sm:text-3xl">
                 <span className="font-bold text-white">Statify</span>
               </h1>
-              <img src={logo} alt="Statify Logo" className="h-8 w-auto" />
+              <img src={logo} alt="Statify Logo" className="h-7 w-auto sm:h-8" />
             </div>
             <p className="text-sm text-gray-400">Connect your Spotify account</p>
           </div>

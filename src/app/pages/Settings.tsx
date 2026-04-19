@@ -20,17 +20,17 @@ export function Settings() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <button
         onClick={() => navigate('/home')}
-        className="mb-6 flex items-center gap-2 text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        className="mb-6 flex items-center gap-2 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] sm:text-base"
       >
         <ArrowLeft className="size-5" />
         Back to Dashboard
       </button>
 
       <div className="mb-8">
-        <h1 className="mb-2 text-3xl text-[var(--text-primary)]">Settings</h1>
+        <h1 className="mb-2 text-2xl text-[var(--text-primary)] sm:text-3xl">Settings</h1>
         <p className="text-[var(--text-secondary)]">Manage your profile and preferences</p>
       </div>
 
@@ -43,7 +43,7 @@ export function Settings() {
         <ThemePreference />
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 rounded-lg border border-red-600/30 bg-red-600/10 px-6 py-3 text-red-500 transition-colors hover:bg-red-600/20"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-red-600/30 bg-red-600/10 px-6 py-3 text-red-500 transition-colors hover:bg-red-600/20 sm:w-auto sm:justify-start"
         >
           <LogOut className="size-5" />
           Log Out

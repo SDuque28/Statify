@@ -124,12 +124,12 @@ export function Home() {
   }, [navigate]);
 
   return (
-    <div className="h-full w-full p-8">
-      <div className="mb-8">
+    <div className="h-full w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="mb-6 sm:mb-8">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-2 text-4xl text-[var(--text-primary)]"
+          className="mb-2 text-3xl text-[var(--text-primary)] sm:text-4xl"
         >
           Dashboard
         </motion.h1>
@@ -148,14 +148,16 @@ export function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-6"
+          className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 sm:p-6"
         >
-          <h2 className="mb-6 text-2xl text-[var(--text-primary)]">Top Artists This Month</h2>
+          <h2 className="mb-5 text-xl text-[var(--text-primary)] sm:mb-6 sm:text-2xl">
+            Top Artists This Month
+          </h2>
           {isLoadingTopArtists ? (
             <div
               className="grid gap-4"
               style={{
-                gridTemplateColumns: `repeat(${artistSlots}, minmax(0, 1fr))`,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
               }}
             >
               {Array.from({ length: artistSlots }).map((_, index) => (
@@ -180,7 +182,7 @@ export function Home() {
             <div
               className="grid gap-4"
               style={{
-                gridTemplateColumns: `repeat(${topArtists.length}, minmax(0, 1fr))`,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
               }}
             >
               {topArtists.map((artist, index) => (
@@ -211,9 +213,11 @@ export function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-6"
+          className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-4 sm:p-6"
         >
-          <h2 className="mb-6 text-2xl text-[var(--text-primary)]">Your Top Tracks</h2>
+          <h2 className="mb-5 text-xl text-[var(--text-primary)] sm:mb-6 sm:text-2xl">
+            Your Top Tracks
+          </h2>
           {isLoadingTopTracks ? (
             <div className="space-y-2">
               {Array.from({ length: trackSlots }).map((_, index) => (

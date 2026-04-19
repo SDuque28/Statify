@@ -94,13 +94,13 @@ export function YearSummaryCard() {
 
   if (isLoading) {
     return (
-      <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-8">
+      <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-5 sm:p-6 lg:p-8">
         <div className="mb-6">
           <div className="mb-3 h-8 w-56 animate-pulse rounded bg-[var(--border-color)]/60" />
           <div className="h-4 w-72 animate-pulse rounded bg-[var(--border-color)]/50" />
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className={panelClass}>
               <div className="mb-4 h-5 w-24 animate-pulse rounded bg-[var(--border-color)]/50" />
@@ -109,7 +109,7 @@ export function YearSummaryCard() {
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           {Array.from({ length: 2 }).map((_, index) => (
             <div key={index} className={panelClass}>
               <div className="mb-4 h-6 w-32 animate-pulse rounded bg-[var(--border-color)]/50" />
@@ -127,9 +127,9 @@ export function YearSummaryCard() {
 
   if (error || !summary) {
     return (
-      <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-8">
+      <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-5 sm:p-6 lg:p-8">
         <div className="mb-4">
-          <h2 className="mb-2 text-3xl text-[var(--text-primary)]">My Year in Music</h2>
+          <h2 className="mb-2 text-2xl text-[var(--text-primary)] sm:text-3xl">My Year in Music</h2>
           <p className="text-[var(--text-secondary)]">Spotify long-term listening summary</p>
         </div>
         <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-4 text-sm text-[var(--text-secondary)]">
@@ -220,13 +220,13 @@ export function YearSummaryCard() {
     genreBreakdown.length > 0 ? genreBreakdown : artistPresenceBreakdown;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-8">
+    <div className="overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-5 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <h2 className="mb-2 text-3xl text-[var(--text-primary)]">My Year in Music</h2>
+        <h2 className="mb-2 text-2xl text-[var(--text-primary)] sm:text-3xl">My Year in Music</h2>
         <p className="text-[var(--text-secondary)]">{summary.period.description}</p>
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -249,7 +249,7 @@ export function YearSummaryCard() {
         ))}
       </div>
 
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
