@@ -57,7 +57,7 @@ export function Home() {
       setTopArtistsError(null);
 
       try {
-        const response = await spotifyService.getTopArtists(5, 'medium_term');
+        const response = await spotifyService.getTopArtists(5, 'short_term');
 
         if (!isActive) {
           return;
