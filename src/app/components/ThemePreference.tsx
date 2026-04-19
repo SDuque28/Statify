@@ -5,13 +5,13 @@ export function ThemePreference() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-6">
-      <h3 className="mb-4 text-xl text-[var(--text-primary)]">Theme Preference</h3>
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-5 sm:p-6">
+      <h3 className="mb-4 text-lg text-[var(--text-primary)] sm:text-xl">Theme Preference</h3>
 
-      <div className="flex gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button
           onClick={() => setTheme('dark')}
-          className={`flex-1 rounded-lg border-2 p-6 transition-all ${
+          className={`rounded-lg border-2 p-5 transition-all sm:p-6 ${
             theme === 'dark'
               ? 'border-[#1db954] bg-[var(--card-hover-bg)]'
               : 'border-[var(--border-color)] bg-[var(--bg-primary)] hover:border-[var(--border-hover)]'
@@ -44,7 +44,7 @@ export function ThemePreference() {
 
         <button
           onClick={() => setTheme('light')}
-          className={`flex-1 rounded-lg border-2 p-6 transition-all ${
+          className={`rounded-lg border-2 p-5 transition-all sm:p-6 ${
             theme === 'light'
               ? 'border-[#1db954] bg-white'
               : 'border-[var(--border-color)] bg-[var(--bg-primary)] hover:border-[var(--border-hover)]'
