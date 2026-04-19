@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
-export class GetTopArtistsQueryDto {
+export class SpotifyQueryOptionsDto {
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()

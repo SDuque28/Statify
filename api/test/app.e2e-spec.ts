@@ -1,11 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
-describe('HealthController (e2e)', () => {
+describe('App (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -104,9 +104,30 @@ describe('HealthController (e2e)', () => {
       });
   });
 
-  it('/spotify/login (GET)', async () => {
+  it('/spotify/connect (GET) without token', async () => {
+    await request(app.getHttpServer()).get('/spotify/connect').expect(401);
+  });
+
+  it('/spotify/connect (GET) with valid token', async () => {
+    const email = `connect_${Date.now()}@example.com`;
+    const password = 'secret123';
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
     await request(app.getHttpServer())
-      .get('/spotify/login')
+      .get('/spotify/connect')
+      .set('Authorization', `Bearer ${loginResponse.body.access_token}`)
       .expect(302)
       .expect((response) => {
         expect(response.headers.location).toContain(
@@ -114,18 +135,48 @@ describe('HealthController (e2e)', () => {
         );
         expect(response.headers.location).toContain('response_type=code');
         expect(response.headers.location).toContain('client_id=your_client_id');
+        expect(response.headers.location).toContain('state=');
         expect(response.headers.location).toContain(
-          encodeURIComponent('http://localhost:3000/spotify/callback'),
+          encodeURIComponent('http://127.0.0.1:3000/spotify/callback'),
         );
+      });
+  });
+
+  it('/spotify/callback (GET) without state', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/callback?code=test-code')
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('Missing Spotify state');
+      });
+  });
+
+  it('/spotify/callback (GET) with invalid state', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/callback?code=test-code&state=invalid-state')
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('Invalid or expired Spotify state');
       });
   });
 
   it('/spotify/callback (GET) without code', async () => {
     await request(app.getHttpServer())
-      .get('/spotify/callback')
+      .get('/spotify/callback?state=test-state')
       .expect(400)
       .expect((response) => {
         expect(response.body.message).toBe('Missing Spotify authorization code');
+      });
+  });
+
+  it('/spotify/callback (GET) with denied access', async () => {
+    await request(app.getHttpServer())
+      .get('/spotify/callback?error=access_denied&state=test-state')
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe(
+          'Spotify authorization failed: access_denied',
+        );
       });
   });
 
@@ -167,6 +218,76 @@ describe('HealthController (e2e)', () => {
         expect(response.body.message).toBe(
           'Spotify account not connected for this user',
         );
+      });
+  });
+
+  it('/spotify/status (GET) without token', async () => {
+    await request(app.getHttpServer()).get('/spotify/status').expect(401);
+  });
+
+  it('/spotify/status (GET) with valid token and no Spotify connection', async () => {
+    const email = `status_${Date.now()}@example.com`;
+    const password = 'secret123';
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get('/spotify/status')
+      .set('Authorization', `Bearer ${loginResponse.body.access_token}`)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          connected: false,
+          spotifyAccountId: null,
+          spotifyDisplayName: null,
+          spotifyEmail: null,
+          spotifyConnectedAt: null,
+          spotifyTokenExpiresAt: null,
+        });
+      });
+  });
+
+  it('/spotify/disconnect (POST) with valid token', async () => {
+    const email = `disconnect_${Date.now()}@example.com`;
+    const password = 'secret123';
+
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email,
+      password,
+    });
+
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        email,
+        password,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/spotify/disconnect')
+      .set('Authorization', `Bearer ${loginResponse.body.access_token}`)
+      .expect(201)
+      .expect((response) => {
+        expect(response.body).toEqual({
+          connected: false,
+          spotifyAccountId: null,
+          spotifyDisplayName: null,
+          spotifyEmail: null,
+          spotifyConnectedAt: null,
+          spotifyTokenExpiresAt: null,
+        });
       });
   });
 

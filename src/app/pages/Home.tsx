@@ -1,36 +1,18 @@
 import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 import { ArtistCard } from '../components/ArtistCard';
 import { TrackItem } from '../components/TrackItem';
 import { YearSummaryCard } from '../components/YearSummaryCard';
+import {
+  SpotifyServiceError,
+  spotifyService,
+  type SpotifyArtist,
+} from '../../services/spotify.service';
 
 export function Home() {
-  const topArtists = [
-    {
-      name: 'The Midnight',
-      imageUrl:
-        'https://images.unsplash.com/photo-1576978264949-aa354035987d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpY2lhbiUyMHBvcnRyYWl0JTIwY29uY2VydHxlbnwxfHx8fDE3NzEzNDQwOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    },
-    {
-      name: 'Aurora',
-      imageUrl:
-        'https://images.unsplash.com/photo-1602026084040-78e6134b2661?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmZW1hbGUlMjBzaW5nZXIlMjBwZXJmb3JtaW5nfGVufDF8fHx8MTc3MTI2ODkyNXww&ixlib=rb-4.1.0&q=80&w=1080',
-    },
-    {
-      name: 'Tame Impala',
-      imageUrl:
-        'https://images.unsplash.com/photo-1552595458-e8ad6af8aa10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYW5kJTIwcGVyZm9ybWluZyUyMHN0YWdlfGVufDF8fHx8MTc3MTM0NDA5N3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    },
-    {
-      name: 'Bon Iver',
-      imageUrl:
-        'https://images.unsplash.com/photo-1767000374714-93fab2581f9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYWxlJTIwYXJ0aXN0JTIwbXVzaWNpYW58ZW58MXx8fHwxNzcxMzQ0MDk3fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    },
-    {
-      name: 'ODESZA',
-      imageUrl:
-        'https://images.unsplash.com/photo-1692176548571-86138128e36c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaiUyMGVsZWN0cm9uaWMlMjBtdXNpY3xlbnwxfHx8fDE3NzEyNzEwNDV8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    },
-  ];
+  const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([]);
+  const [isLoadingTopArtists, setIsLoadingTopArtists] = useState(true);
+  const [topArtistsError, setTopArtistsError] = useState<string | null>(null);
 
   const topTracks = [
     {
@@ -63,6 +45,56 @@ export function Home() {
     },
   ];
 
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadTopArtists() {
+      setIsLoadingTopArtists(true);
+      setTopArtistsError(null);
+
+      try {
+        const response = await spotifyService.getTopArtists(5, 'medium_term');
+
+        if (!isActive) {
+          return;
+        }
+
+        setTopArtists(response.items);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        if (error instanceof SpotifyServiceError) {
+          if (error.status === 404) {
+            setTopArtistsError('Connect your Spotify account to see your real top artists here.');
+            return;
+          }
+
+          if (error.status === 401) {
+            setTopArtistsError('Your session expired. Please log in again to load Spotify data.');
+            return;
+          }
+
+          setTopArtistsError(error.message);
+          return;
+        }
+
+        setTopArtistsError('We could not load your Spotify top artists right now.');
+      } finally {
+        if (isActive) {
+          setIsLoadingTopArtists(false);
+        }
+      }
+    }
+
+    void loadTopArtists();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   return (
     <div className="h-full w-full p-8">
       <div className="mb-8">
@@ -91,18 +123,47 @@ export function Home() {
           className="rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] p-6"
         >
           <h2 className="mb-6 text-2xl text-[var(--text-primary)]">Top Artists This Month</h2>
-          <div className="flex gap-6 overflow-x-auto pb-2">
-            {topArtists.map((artist, index) => (
-              <motion.div
-                key={artist.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3 + index * 0.1 }}
-              >
-                <ArtistCard name={artist.name} imageUrl={artist.imageUrl} />
-              </motion.div>
-            ))}
-          </div>
+          {isLoadingTopArtists ? (
+            <div className="flex gap-6 overflow-x-auto pb-2">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={`artist-skeleton-${index}`} className="flex min-w-[144px] flex-col items-center gap-3">
+                  <div className="size-36 animate-pulse rounded-full bg-[var(--border-color)]/60" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-[var(--border-color)]/60" />
+                </div>
+              ))}
+            </div>
+          ) : topArtistsError ? (
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-4 text-sm text-[var(--text-secondary)]">
+              {topArtistsError}
+            </div>
+          ) : topArtists.length === 0 ? (
+            <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-5 py-4 text-sm text-[var(--text-secondary)]">
+              No top artists available yet for this time range.
+            </div>
+          ) : (
+            <div className="flex gap-6 overflow-x-auto pb-2">
+              {topArtists.map((artist, index) => (
+                <motion.a
+                  key={artist.id}
+                  href={artist.external_urls.spotify}
+                  target="_blank"
+                  rel="noreferrer"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="block"
+                >
+                  <ArtistCard
+                    name={artist.name}
+                    imageUrl={
+                      artist.images[0]?.url ??
+                      `https://placehold.co/288x288/1f2937/f9fafb?text=${encodeURIComponent(artist.name)}`
+                    }
+                  />
+                </motion.a>
+              ))}
+            </div>
+          )}
         </motion.section>
 
         <motion.section

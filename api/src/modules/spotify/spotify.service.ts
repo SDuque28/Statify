@@ -1,6 +1,8 @@
 import 'dotenv/config';
+import { randomBytes } from 'node:crypto';
 import {
   BadGatewayException,
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -44,6 +46,21 @@ export interface SpotifyTopArtistsResponse {
   href: string;
 }
 
+interface SpotifyProfileResponse {
+  id: string;
+  email?: string;
+  display_name?: string | null;
+}
+
+export interface SpotifyConnectionStatusResponse {
+  connected: boolean;
+  spotifyAccountId: string | null;
+  spotifyDisplayName: string | null;
+  spotifyEmail: string | null;
+  spotifyConnectedAt: Date | null;
+  spotifyTokenExpiresAt: Date | null;
+}
+
 interface SpotifyErrorResponse {
   error?: {
     status?: number;
@@ -62,6 +79,11 @@ export class SpotifyService {
     'user-read-private',
     'user-top-read',
   ];
+  private readonly stateStore = new Map<
+    string,
+    { userId: number; expiresAt: number }
+  >();
+  private readonly stateTtlMs = 10 * 60 * 1000;
 
   constructor(private readonly prisma: PrismaService) {
     this.clientId = this.getRequiredEnv('SPOTIFY_CLIENT_ID');
@@ -69,12 +91,14 @@ export class SpotifyService {
     this.redirectUri = this.getRequiredEnv('SPOTIFY_REDIRECT_URI');
   }
 
-  getAuthorizationUrl() {
+  getConnectAuthorizationUrl(userId: number) {
+    const state = this.createState(userId);
     const searchParams = new URLSearchParams({
       client_id: this.clientId,
       response_type: 'code',
       redirect_uri: this.redirectUri,
       scope: this.scopes.join(' '),
+      state,
     });
 
     return `https://accounts.spotify.com/authorize?${searchParams.toString()}`;
@@ -124,12 +148,42 @@ export class SpotifyService {
     return responseBody;
   }
 
-  async saveSpotifyTokensForUser(userId: number, tokens: SpotifyTokenResponse) {
+  async connectSpotifyAccount(
+    code: string,
+    state: string,
+  ): Promise<SpotifyConnectionStatusResponse> {
+    const userId = this.consumeState(state);
+    const tokens = await this.exchangeCodeForTokens(code);
+    const profile = await this.makeSpotifyRequestWithAccessToken<SpotifyProfileResponse>(
+      tokens.access_token,
+      'me',
+    );
+
+    const user = await this.saveSpotifyTokensForUser(userId, tokens, profile);
+
+    return {
+      connected: true,
+      spotifyAccountId: user.spotifyAccountId ?? null,
+      spotifyDisplayName: user.spotifyDisplayName ?? null,
+      spotifyEmail: user.spotifyEmail ?? null,
+      spotifyConnectedAt: user.spotifyConnectedAt,
+      spotifyTokenExpiresAt: user.spotifyTokenExpiresAt,
+    };
+  }
+
+  async saveSpotifyTokensForUser(
+    userId: number,
+    tokens: SpotifyTokenResponse,
+    profile?: SpotifyProfileResponse,
+  ) {
     const spotifyTokenExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     return this.prisma.user.update({
       where: { id: userId },
       data: {
+        spotifyAccountId: profile?.id,
+        spotifyEmail: profile?.email ?? null,
+        spotifyDisplayName: profile?.display_name ?? null,
         spotifyAccessToken: tokens.access_token,
         spotifyRefreshToken: tokens.refresh_token ?? null,
         spotifyTokenExpiresAt,
@@ -138,10 +192,68 @@ export class SpotifyService {
       select: {
         id: true,
         email: true,
+        spotifyAccountId: true,
+        spotifyEmail: true,
+        spotifyDisplayName: true,
         spotifyTokenExpiresAt: true,
         spotifyConnectedAt: true,
       },
     });
+  }
+
+  async getSpotifyConnectionStatus(
+    userId: number,
+  ): Promise<SpotifyConnectionStatusResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        spotifyAccountId: true,
+        spotifyEmail: true,
+        spotifyDisplayName: true,
+        spotifyAccessToken: true,
+        spotifyConnectedAt: true,
+        spotifyTokenExpiresAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      connected: Boolean(user.spotifyAccessToken),
+      spotifyAccountId: user.spotifyAccountId ?? null,
+      spotifyDisplayName: user.spotifyDisplayName ?? null,
+      spotifyEmail: user.spotifyEmail ?? null,
+      spotifyConnectedAt: user.spotifyConnectedAt,
+      spotifyTokenExpiresAt: user.spotifyTokenExpiresAt,
+    };
+  }
+
+  async disconnectSpotifyAccount(
+    userId: number,
+  ): Promise<SpotifyConnectionStatusResponse> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        spotifyAccountId: null,
+        spotifyEmail: null,
+        spotifyDisplayName: null,
+        spotifyAccessToken: null,
+        spotifyRefreshToken: null,
+        spotifyTokenExpiresAt: null,
+        spotifyConnectedAt: null,
+      },
+    });
+
+    return {
+      connected: false,
+      spotifyAccountId: null,
+      spotifyDisplayName: null,
+      spotifyEmail: null,
+      spotifyConnectedAt: null,
+      spotifyTokenExpiresAt: null,
+    };
   }
 
   async getAccessToken(userId: number) {
@@ -170,6 +282,37 @@ export class SpotifyService {
 
   async makeSpotifyRequest<T>(userId: number, endpoint: string): Promise<T> {
     const accessToken = await this.getAccessToken(userId);
+    return this.makeSpotifyRequestWithAccessToken<T>(accessToken, endpoint);
+  }
+
+  getTopArtists(
+    userId: number,
+    options?: {
+      limit?: number;
+      time_range?: 'short_term' | 'medium_term' | 'long_term';
+    },
+  ) {
+    const searchParams = new URLSearchParams();
+
+    if (options?.limit !== undefined) {
+      searchParams.set('limit', String(options.limit));
+    }
+
+    if (options?.time_range) {
+      searchParams.set('time_range', options.time_range);
+    }
+
+    const endpoint = searchParams.size
+      ? `me/top/artists?${searchParams.toString()}`
+      : 'me/top/artists';
+
+    return this.makeSpotifyRequest<SpotifyTopArtistsResponse>(userId, endpoint);
+  }
+
+  private async makeSpotifyRequestWithAccessToken<T>(
+    accessToken: string,
+    endpoint: string,
+  ): Promise<T> {
     const normalizedEndpoint = endpoint.replace(/^\/+/, '');
 
     let response: Response;
@@ -212,28 +355,42 @@ export class SpotifyService {
     return responseBody as T;
   }
 
-  getTopArtists(
-    userId: number,
-    options?: {
-      limit?: number;
-      time_range?: 'short_term' | 'medium_term' | 'long_term';
-    },
-  ) {
-    const searchParams = new URLSearchParams();
+  private createState(userId: number) {
+    this.cleanupExpiredStates();
 
-    if (options?.limit !== undefined) {
-      searchParams.set('limit', String(options.limit));
+    const state = randomBytes(24).toString('hex');
+
+    this.stateStore.set(state, {
+      userId,
+      expiresAt: Date.now() + this.stateTtlMs,
+    });
+
+    return state;
+  }
+
+  private consumeState(state: string) {
+    this.cleanupExpiredStates();
+
+    const storedState = this.stateStore.get(state);
+
+    if (!storedState || storedState.expiresAt <= Date.now()) {
+      this.stateStore.delete(state);
+      throw new BadRequestException('Invalid or expired Spotify state');
     }
 
-    if (options?.time_range) {
-      searchParams.set('time_range', options.time_range);
+    this.stateStore.delete(state);
+
+    return storedState.userId;
+  }
+
+  private cleanupExpiredStates() {
+    const now = Date.now();
+
+    for (const [state, value] of this.stateStore.entries()) {
+      if (value.expiresAt <= now) {
+        this.stateStore.delete(state);
+      }
     }
-
-    const endpoint = searchParams.size
-      ? `me/top/artists?${searchParams.toString()}`
-      : 'me/top/artists';
-
-    return this.makeSpotifyRequest<SpotifyTopArtistsResponse>(userId, endpoint);
   }
 
   private getRequiredEnv(name: string) {
