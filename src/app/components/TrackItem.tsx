@@ -1,23 +1,18 @@
-import { Bar, BarChart } from 'recharts';
-
 interface TrackItemProps {
   albumCover: string;
   trackName: string;
   artistName: string;
-  playCount: number;
+  albumName: string;
+  rank: number;
 }
 
 export function TrackItem({
   albumCover,
   trackName,
   artistName,
-  playCount,
+  albumName,
+  rank,
 }: TrackItemProps) {
-  const chartData = Array.from({ length: 7 }, (_, i) => ({
-    day: i,
-    plays: Math.floor(playCount * (0.5 + (((playCount + i * 17) % 45) + 10) / 100)),
-  }));
-
   return (
     <div className="group flex items-center gap-4 rounded-lg p-4 transition-colors hover:bg-[var(--card-hover-bg)]">
       <img src={albumCover} alt={trackName} className="size-14 rounded object-cover" />
@@ -26,15 +21,12 @@ export function TrackItem({
           {trackName}
         </p>
         <p className="truncate text-sm text-[var(--text-secondary)]">{artistName}</p>
+        <p className="truncate text-xs text-[var(--text-secondary)]">Album: {albumName}</p>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="h-12 w-24">
-          <BarChart width={96} height={48} data={chartData}>
-            <Bar dataKey="plays" fill="#1db954" radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </div>
-        <p className="w-20 text-right text-sm text-[var(--text-secondary)]">
-          {playCount.toLocaleString()} plays
+      <div className="text-right">
+        <p className="text-lg text-[var(--text-primary)]">#{rank}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          Top Track
         </p>
       </div>
     </div>

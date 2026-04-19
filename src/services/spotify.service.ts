@@ -43,6 +43,15 @@ interface SpotifyConnectUrlResponse {
   authUrl: string;
 }
 
+export interface SpotifyTopTrack {
+  id: string;
+  name: string;
+  artists: string[];
+  album: string;
+  image: string | null;
+  popularity: number;
+}
+
 export class SpotifyServiceError extends Error {
   readonly status: number;
 
@@ -117,6 +126,12 @@ async function get<T>(path: string, query?: Record<string, string | number | und
 export const spotifyService = {
   getTopArtists(limit = 5, timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term') {
     return get<SpotifyTopArtistsResponse>('/spotify/top-artists', {
+      limit,
+      time_range: timeRange,
+    });
+  },
+  getTopTracks(limit = 5, timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term') {
+    return get<SpotifyTopTrack[]>('/me/top-tracks', {
       limit,
       time_range: timeRange,
     });
