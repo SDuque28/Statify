@@ -38,8 +38,35 @@ interface SpotifyTopArtistItem {
   };
 }
 
+interface SpotifyTopTrackItem {
+  id: string;
+  name: string;
+  popularity: number;
+  artists: Array<{
+    name: string;
+  }>;
+  album: {
+    name: string;
+    images: Array<{
+      url: string;
+      height: number | null;
+      width: number | null;
+    }>;
+  };
+}
+
 export interface SpotifyTopArtistsResponse {
   items: SpotifyTopArtistItem[];
+  total: number;
+  limit: number;
+  offset: number;
+  next: string | null;
+  previous: string | null;
+  href: string;
+}
+
+interface SpotifyTopTracksResponse {
+  items: SpotifyTopTrackItem[];
   total: number;
   limit: number;
   offset: number;
@@ -67,6 +94,15 @@ export interface SpotifyConnectionStatusResponse {
   spotifyEmail: string | null;
   spotifyConnectedAt: Date | null;
   spotifyTokenExpiresAt: Date | null;
+}
+
+export interface SimplifiedSpotifyTrack {
+  id: string;
+  name: string;
+  artists: string[];
+  album: string;
+  image: string | null;
+  popularity: number;
 }
 
 interface SpotifyErrorResponse {
@@ -390,7 +426,9 @@ export class SpotifyService {
     });
 
     if (!user || !user.spotifyAccessToken) {
-      throw new NotFoundException('Spotify account not connected for this user');
+      throw new UnauthorizedException(
+        'Spotify access token is missing. Please connect your Spotify account.',
+      );
     }
 
     if (
@@ -401,6 +439,63 @@ export class SpotifyService {
     }
 
     return user.spotifyAccessToken;
+  }
+
+  async getTopTracks(
+    accessToken: string,
+    options?: {
+      limit?: number;
+      time_range?: 'short_term' | 'medium_term' | 'long_term';
+    },
+  ): Promise<SimplifiedSpotifyTrack[]> {
+    const searchParams = new URLSearchParams();
+
+    if (options?.limit !== undefined) {
+      searchParams.set('limit', String(options.limit));
+    }
+
+    if (options?.time_range) {
+      searchParams.set('time_range', options.time_range);
+    }
+
+    const endpoint = searchParams.size
+      ? `me/top/tracks?${searchParams.toString()}`
+      : 'me/top/tracks';
+
+    const response = await this.makeSpotifyRequestWithAccessToken<SpotifyTopTracksResponse>(
+      accessToken,
+      endpoint,
+    );
+
+    return response.items.map((track) => ({
+      id: track.id,
+      name: track.name,
+      artists: track.artists.map((artist) => artist.name),
+      album: track.album.name,
+      image: track.album.images[0]?.url ?? null,
+      popularity: track.popularity,
+    }));
+  }
+
+  async getTopTracksForUser(
+    userId: number,
+    options?: {
+      limit?: number;
+      time_range?: 'short_term' | 'medium_term' | 'long_term';
+    },
+  ): Promise<SimplifiedSpotifyTrack[]> {
+    let accessToken = await this.getAccessToken(userId);
+
+    try {
+      return await this.getTopTracks(accessToken, options);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        accessToken = await this.refreshAccessTokenForUser(userId);
+        return this.getTopTracks(accessToken, options);
+      }
+
+      throw error;
+    }
   }
 
   async makeSpotifyRequest<T>(userId: number, endpoint: string): Promise<T> {
