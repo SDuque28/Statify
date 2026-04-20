@@ -52,7 +52,7 @@ export function Landing() {
             className="mb-8"
           >
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth', { state: { tab: 'signup' } })}
               className="w-full rounded-full bg-[#1db954] px-8 py-4 text-base shadow-2xl shadow-[#1db954]/50 transition-all hover:scale-105 hover:bg-[#1ed760] sm:w-auto sm:px-12 sm:py-5 sm:text-lg"
             >
               <span className="flex items-center justify-center gap-3">
@@ -71,7 +71,7 @@ export function Landing() {
               }}
               transition={{ duration: 0.3, delay: 0.1 }}
               className="mx-auto mt-4 max-w-2xl cursor-pointer text-base text-gray-400 underline underline-offset-4 sm:text-lg md:text-xl"
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth', { state: { tab: 'login' } })}
             >
               Log In
             </motion.p>

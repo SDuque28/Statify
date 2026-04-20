@@ -14,6 +14,16 @@ export interface LoginResponse {
   user: AuthUser;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  resetUrl: string | null;
+  expiresAt: string | null;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export class AuthServiceError extends Error {
   readonly status: number;
 
@@ -25,11 +35,6 @@ export class AuthServiceError extends Error {
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
-
-interface AuthPayload {
-  email: string;
-  password: string;
-}
 
 function extractErrorMessage(payload: unknown, fallback: string) {
   if (payload && typeof payload === 'object' && 'message' in payload) {
@@ -47,7 +52,7 @@ function extractErrorMessage(payload: unknown, fallback: string) {
   return fallback;
 }
 
-async function post<T>(path: string, payload: AuthPayload): Promise<T> {
+async function post<T>(path: string, payload: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: {
@@ -74,5 +79,11 @@ export const authService = {
   },
   login(email: string, password: string) {
     return post<LoginResponse>('/auth/login', { email, password });
+  },
+  forgotPassword(email: string) {
+    return post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+  },
+  resetPassword(token: string, password: string) {
+    return post<ResetPasswordResponse>('/auth/reset-password', { token, password });
   },
 };

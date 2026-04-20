@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
@@ -6,6 +6,59 @@ import logo from '../../imports/LogoWhite.svg';
 import { AuthServiceError, authService } from '../../services/auth.service';
 import { authStorage } from '../../services/auth-storage';
 import { SpotifyServiceError, spotifyService } from '../../services/spotify.service';
+
+const policyContent = {
+  terms: {
+    title: 'Terms of Use',
+    sections: [
+      {
+        heading: 'Using Statify',
+        body:
+          'Statify helps you explore your Spotify listening insights. By creating an account, you agree to use the app lawfully and not attempt to misuse, disrupt, or reverse-engineer the service.',
+      },
+      {
+        heading: 'Your Account',
+        body:
+          'You are responsible for keeping your login credentials secure and for activity that happens under your account. We may suspend access if we detect abuse, fraud, or behavior that puts the platform or other users at risk.',
+      },
+      {
+        heading: 'Spotify Data',
+        body:
+          'When you connect Spotify, Statify reads the account information and listening insights needed to power your dashboard. Your use of Spotify through Statify must also comply with Spotify’s own terms and platform policies.',
+      },
+      {
+        heading: 'Service Availability',
+        body:
+          'We aim to keep Statify available and accurate, but we cannot guarantee uninterrupted service or error-free analytics. Features may change, improve, or be removed as the product evolves.',
+      },
+    ],
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    sections: [
+      {
+        heading: 'What We Collect',
+        body:
+          'We store the minimum account data needed to authenticate you, such as your email address, encrypted password, and linked Spotify account details when you connect Spotify.',
+      },
+      {
+        heading: 'How We Use Data',
+        body:
+          'Your data is used to sign you in, connect to Spotify on your behalf, and display personalized music insights like top artists, top tracks, and yearly summaries.',
+      },
+      {
+        heading: 'What We Do Not Sell',
+        body:
+          'Statify does not sell your personal information. We only process the data necessary to run the product experience you requested.',
+      },
+      {
+        heading: 'Retention and Control',
+        body:
+          'You can disconnect Spotify or stop using the service at any time. Account and connection data may remain stored as needed for security, legal compliance, and service integrity unless you request deletion.',
+      },
+    ],
+  },
+} as const;
 
 export function Auth() {
   const navigate = useNavigate();
@@ -25,6 +78,7 @@ export function Auth() {
   const [submissionState, setSubmissionState] = useState<
     'idle' | 'login' | 'signup' | 'spotify_status' | 'spotify_redirect'
   >('idle');
+  const [openPolicy, setOpenPolicy] = useState<keyof typeof policyContent | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -36,6 +90,16 @@ export function Auth() {
 
     setIsCheckingSession(false);
   }, [navigate]);
+
+  useEffect(() => {
+    if (location.state && typeof location.state === 'object' && 'tab' in location.state) {
+      const state = location.state as { tab?: 'login' | 'signup' };
+
+      if (state.tab === 'login' || state.tab === 'signup') {
+        setActiveTab(state.tab);
+      }
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (location.state && typeof location.state === 'object' && 'reason' in location.state) {
@@ -156,6 +220,7 @@ export function Auth() {
           : 'Log In';
   const signupButtonLabel =
     submissionState === 'signup' ? 'Creating Account...' : 'Sign Up';
+  const selectedPolicy = openPolicy ? policyContent[openPolicy] : null;
 
   if (isCheckingSession) {
     return (
@@ -311,6 +376,11 @@ export function Auth() {
               <div className="text-center">
                 <button
                   type="button"
+                  onClick={() =>
+                    navigate('/reset-password', {
+                      state: { email: loginFormData.email.trim() },
+                    })
+                  }
                   className="text-sm text-gray-400 underline transition-colors hover:text-white"
                 >
                   Forgot your password?
@@ -387,17 +457,74 @@ export function Auth() {
 
           <p className="mt-8 text-center text-xs text-gray-500">
             By continuing, you agree to our{' '}
-            <button type="button" className="text-gray-400 underline hover:text-white">
+            <button
+              type="button"
+              onClick={() => setOpenPolicy('terms')}
+              className="text-gray-400 underline hover:text-white"
+            >
               Terms
             </button>{' '}
             and{' '}
-            <button type="button" className="text-gray-400 underline hover:text-white">
+            <button
+              type="button"
+              onClick={() => setOpenPolicy('privacy')}
+              className="text-gray-400 underline hover:text-white"
+            >
               Privacy Policy
             </button>
             .
           </p>
         </div>
       </motion.div>
+
+      {selectedPolicy && (
+        <div className="absolute inset-0 z-30 overflow-hidden bg-[#050805]/95 px-4 py-6 sm:px-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(29,185,84,0.24),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(29,185,84,0.16),transparent_34%),linear-gradient(180deg,rgba(8,12,9,0.88),rgba(5,8,5,0.96))]" />
+          <div className="absolute left-[-8rem] top-[-6rem] h-56 w-56 rounded-full bg-[#1db954]/20 blur-3xl sm:h-72 sm:w-72" />
+          <div className="absolute bottom-[-7rem] right-[-5rem] h-64 w-64 rounded-full bg-[#1ed760]/12 blur-3xl sm:h-80 sm:w-80" />
+          <div className="relative flex min-h-full items-center justify-center">
+          <div className="w-full max-w-2xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,29,23,0.96),rgba(12,16,13,0.98))] p-5 shadow-[0_32px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl text-white sm:text-3xl">{selectedPolicy.title}</h2>
+                <p className="mt-2 text-sm text-gray-400">
+                  Please read this information before continuing with your account.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenPolicy(null)}
+                className="rounded-full border border-white/10 p-2 text-gray-400 transition-colors hover:text-white"
+                aria-label="Close policy"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] space-y-5 overflow-y-auto pr-1">
+              {selectedPolicy.sections.map((section) => (
+                <section key={section.heading}>
+                  <h3 className="mb-2 text-sm uppercase tracking-[0.18em] text-[#1db954]">
+                    {section.heading}
+                  </h3>
+                  <p className="text-sm leading-6 text-gray-300">{section.body}</p>
+                </section>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setOpenPolicy(null)}
+                className="rounded-full bg-[#1db954] px-5 py-2.5 text-sm text-white transition-colors hover:bg-[#1ed760]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

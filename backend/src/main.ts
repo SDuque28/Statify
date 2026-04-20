@@ -1,6 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
-import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import './config/load-env';
 import { AppModule } from './app.module';
 
 function buildAllowedOrigins() {

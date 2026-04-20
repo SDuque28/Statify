@@ -53,6 +53,7 @@ export interface SpotifyTopTrack {
   album: string;
   image: string | null;
   popularity: number;
+  spotifyUrl: string | null;
 }
 
 export interface SpotifyYearSummaryArtist {

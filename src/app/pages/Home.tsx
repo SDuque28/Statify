@@ -261,6 +261,7 @@ export function Home() {
                       `https://placehold.co/96x96/1f2937/f9fafb?text=${encodeURIComponent(track.album)}`
                     }
                     rank={index + 1}
+                    spotifyUrl={track.spotifyUrl}
                   />
                 </motion.div>
               ))}

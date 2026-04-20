@@ -4,6 +4,7 @@ interface TrackItemProps {
   artistName: string;
   albumName: string;
   rank: number;
+  spotifyUrl?: string | null;
 }
 
 export function TrackItem({
@@ -12,8 +13,9 @@ export function TrackItem({
   artistName,
   albumName,
   rank,
+  spotifyUrl,
 }: TrackItemProps) {
-  return (
+  const content = (
     <div className="group flex flex-col gap-3 rounded-lg p-3 transition-colors hover:bg-[var(--card-hover-bg)] sm:flex-row sm:items-center sm:gap-4 sm:p-4">
       <div className="flex items-center gap-3 sm:flex-1 sm:gap-4">
         <img src={albumCover} alt={trackName} className="size-12 rounded object-cover sm:size-14" />
@@ -32,5 +34,15 @@ export function TrackItem({
         </p>
       </div>
     </div>
+  );
+
+  if (!spotifyUrl) {
+    return content;
+  }
+
+  return (
+    <a href={spotifyUrl} target="_blank" rel="noreferrer" className="block rounded-lg">
+      {content}
+    </a>
   );
 }

@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { randomBytes } from 'node:crypto';
 import {
   BadGatewayException,
@@ -10,6 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import '../../config/load-env';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 export interface SpotifyTokenResponse {
@@ -42,6 +42,9 @@ interface SpotifyTopTrackItem {
   id: string;
   name: string;
   popularity: number;
+  external_urls?: {
+    spotify?: string;
+  };
   artists: Array<{
     name: string;
   }>;
@@ -113,6 +116,7 @@ export interface SimplifiedSpotifyTrack {
   album: string;
   image: string | null;
   popularity: number;
+  spotifyUrl: string | null;
 }
 
 export interface SimplifiedSpotifyArtist {
@@ -530,6 +534,7 @@ export class SpotifyService {
       album: track.album.name,
       image: track.album.images[0]?.url ?? null,
       popularity: track.popularity,
+      spotifyUrl: track.external_urls?.spotify ?? null,
     }));
   }
 
@@ -629,6 +634,10 @@ export class SpotifyService {
           ? track.album.images[0]?.url ?? null
           : null,
       popularity: typeof track?.popularity === 'number' ? track.popularity : 0,
+      spotifyUrl:
+        track?.external_urls && typeof track.external_urls.spotify === 'string'
+          ? track.external_urls.spotify
+          : null,
     }));
 
     const simplifiedTopArtists = topArtistItems.map((artist) => ({

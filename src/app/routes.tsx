@@ -4,6 +4,7 @@ import { Landing } from './pages/Landing';
 import { Auth } from './pages/Auth';
 import { Layout } from './pages/Layout';
 import { Home } from './pages/Home';
+import { ResetPassword } from './pages/ResetPassword';
 import { Settings } from './pages/Settings';
 
 export const router = createBrowserRouter([
@@ -14,6 +15,10 @@ export const router = createBrowserRouter([
   {
     path: '/auth',
     element: <Auth />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPassword />,
   },
   {
     element: <ProtectedRoute />,
