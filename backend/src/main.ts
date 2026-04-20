@@ -14,7 +14,13 @@ function buildAllowedOrigins() {
     'http://127.0.0.1:5173',
   ];
 
-  return Array.from(new Set(configuredOrigins.filter(Boolean)));
+  return Array.from(
+    new Set(
+      configuredOrigins
+        .filter((origin): origin is string => typeof origin === 'string' && origin.length > 0)
+        .map((origin) => origin.replace(/\/+$/, '')),
+    ),
+  );
 }
 
 async function bootstrap() {
@@ -30,20 +36,22 @@ async function bootstrap() {
         return;
       }
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
         return;
       }
 
       if (
         allowVercelPreviews &&
-        /^https:\/\/[a-z0-9-]+-[a-z0-9-]+-[a-z0-9-]+\.vercel\.app$/i.test(origin)
+        /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalizedOrigin)
       ) {
         callback(null, true);
         return;
       }
 
-      callback(new Error(`Origin ${origin} is not allowed by CORS`), false);
+      callback(new Error(`Origin ${normalizedOrigin} is not allowed by CORS`), false);
     },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
